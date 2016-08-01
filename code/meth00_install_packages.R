@@ -10,7 +10,7 @@ R.version$version.string
 #'   
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr")
-methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA")
+methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) install.packages(toinstallCRAN)
@@ -18,7 +18,7 @@ if(length(toinstallCRAN >= 1)) install.packages(toinstallCRAN)
 toinstallBioC <- setdiff(methpackagesBioC, installed.packages()[,1])
 if(length(toinstallBioC >= 1)) {
   source("https://bioconductor.org/biocLite.R")
-  bioclite(toinstallBioC)
+  biocLite(toinstallBioC)
 }  
 #' cleanup
 rm(methpackagesCRAN, methpackagesBioC, toinstallCRAN, toinstallBioC)
