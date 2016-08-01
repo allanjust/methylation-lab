@@ -16,5 +16,12 @@ suppressPackageStartupMessages({
 
 #' looking at results
 
+#' qqplot and lambda interpretation
+
+#' volcano plot interpretation
+
+#' looking at a top hit
+
+
 
 #' End of script

@@ -7,18 +7,19 @@ suppressPackageStartupMessages({
   library(LOLA) # enrichment analyses
   #library(bigvis) # visualization of large datasets - not on cran
   library(ggplot2) #
+  library(coMET) # plot a region of CpGs
 })
 
 #' recall that we have already run an Epigenome-Wide Association Study
 #' 
 
-#'# Pathway analyses
+#'# Pathway analyses with missMethyl
 
 
-#'# Enrichment analyses
+#'# Enrichment analyses with LOLA
 
 
-#'# Vizualizing patterns in results
+#'# Visualizing a genomic region with coMET
 
 
 
