@@ -51,6 +51,8 @@ cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
 knitr::kable(cellprop, digits = 2)
 #' note that they are close to summing to 1
 summary(rowSums(cellprop))
+#'Distribution of estiamted cell types
+boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %")
 
 #'
 #' ## Preprocessing the data
@@ -71,11 +73,66 @@ print(getBeta(WB)[1:3,1:3], digits = 2)
 print(getBeta(WB.noob)[1:3,1:3], digits = 2)
 
 
+#' Distribution of beta-values: before and after normalization
+plot(density(getBeta(WB.noob)[,1]), col="blue",ylim=c(0,5),
+     main='Beta Density',xlab=expression(beta~"-value")) # plot the first density
+for(i in 2:dim(getBeta(WB.noob))[2]){ #Plot remaning noob adjusted samples
+  lines(density(getBeta(WB.noob)[,i]), col="blue")      
+}
+for(i in 1:dim(getBeta(WB.noob))[2]){ # Add lines to the existing plot for unadjusted betas
+  lines(density(na.omit(getBeta(WB))[,i]), col="magenta")        
+}
+legend("topright", c("Noob","Raw"), 
+       lty=c(1,1), title="Normalization", 
+       bty='n', cex=0.8, col=c("blue","magenta"))
+
+#' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
+## BMIQ with EnMix: multi-processor wrapper of BMIQ
+require(ENmix)
+cores<-detectCores()
+betas.bmiq<-bmiq.mc(WB.noob, nCores=cores-1) #4-cores~2.8 min;3-cores~3.3 min
+dim(betas.bmiq)
+
+## Annotation of Infinium type for each probe (I vs II)
+typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
+typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
+onetwo <- rep(1, nrow(betas.bmiq))
+onetwo[rownames(betas.bmiq) %in% typeII] <- 2
+table(onetwo)
+
+
+#' Density plots by Infinium type: before and after BMIQ 
+par(mfrow=c(1,2)) # Side-by-side density distributions 
+# Noob adjusted Beta density
+plot(density(getBeta(WB.noob)[,1][onetwo==1]), col="blue",ylim=c(0,6), 
+     main='Beta density',xlab=expression(beta~"-value")) # plot the first density
+for(i in 2:dim(getBeta(WB.noob))[2]){          # Add the lines to the existing plot
+  lines(density(getBeta(WB.noob)[,i][onetwo==1]), col="blue")        
+}
+for(i in 1:dim(getBeta(WB.noob))[2]){          # Add the lines to the existing plot
+  lines(density(getBeta(WB.noob)[,i][onetwo==2]), col="red")        
+}
+legend("topright", c("Infinium I","Infinium II"), 
+       lty=c(1,1), title="Infinium type", 
+       bty='n', cex=0.8, col=c("blue","red"))
+
+# BMIQ adjusted Beta Density
+plot(density(betas.bmiq[,1][onetwo==1]), col="blue",ylim=c(0,6), 
+     main='Beta density BMIQ adjusted',xlab=expression(beta~"-value")) # plot the first density
+for(i in 2:dim(betas.bmiq)[2]){          # Add the lines to the existing plot
+  lines(density(betas.bmiq[,i][onetwo==1]), col="blue")        
+}
+for(i in 1:dim(betas.bmiq)[2]){          # Add the lines to the existing plot
+  lines(density(betas.bmiq[,i][onetwo==2]), col="red")        
+}
+legend("topright", c("Infinium I","Infinium II"), 
+       lty=c(1,1), title="Infinium type", 
+       bty='n', cex=0.8, col=c("blue","red"))
 
 #' just checking how much memory we are using
-mem_used()
+#mem_used()
 
 #' this command will check the maximum memory usage on Windows
-# memory.size(max = T)
+memory.size(max = T)
 
 #' End of script

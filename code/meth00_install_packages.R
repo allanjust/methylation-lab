@@ -10,7 +10,7 @@ R.version$version.string
 #'   
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr")
-methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET")
+methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET","ENmix","sva")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) install.packages(toinstallCRAN)
