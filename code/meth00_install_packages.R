@@ -7,7 +7,11 @@
 #'you should be running version 3.3.1
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
-#'   
+
+#' please consider updating your packages:
+update.packages()
+
+#'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr")
 methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET","ENmix","sva")
@@ -18,7 +22,7 @@ if(length(toinstallCRAN >= 1)) install.packages(toinstallCRAN)
 toinstallBioC <- setdiff(methpackagesBioC, installed.packages()[,1])
 if(length(toinstallBioC >= 1)) {
   source("https://bioconductor.org/biocLite.R")
-  biocLite(toinstallBioC)
+  biocLite(toinstallBioC, suppressUpdates = T)
 }  
 #' cleanup
 rm(methpackagesCRAN, methpackagesBioC, toinstallCRAN, toinstallBioC)
