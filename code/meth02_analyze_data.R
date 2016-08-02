@@ -2,6 +2,8 @@
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R  
 
+#Elena Colicino
+
 #' recall that we have a processed dataset with 15 samples
 dim(WB)
 
