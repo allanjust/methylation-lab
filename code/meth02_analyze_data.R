@@ -101,7 +101,7 @@ results2<-cpg.assoc(betas.bmiq,pheno[,"Sex"],
 results2
 
 #' looking at results
-
+ 
 Coef<-results1$coefficients[,4:5]
 setnames(Coef, colnames(Coef), c("Est", "SD"))
 Coef<-Coef[order(rownames(Coef)),]
