@@ -10,6 +10,7 @@ dim(WB)
 suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
+  library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 })
 
 # # Evaluate any remaining batch effects from design using the principal component analysis
@@ -43,16 +44,12 @@ suppressPackageStartupMessages({
 # the median total intensity of the Y-chromosome-mapped probes
 
 Gbeta<-mapToGenome(WB)  #map to the genome
-estSex <- getSex(Gbeta) #get sex
-estSex
-Gbeta <- addSex(Gbeta, sex = estSex)  #add predicted sex to the phenodata
-#note: predicted sex is already included in the dataset-> warning for replacment of that column
-
-Gbeta$predictedSex<-as.factor(Gbeta$predictedSex)
-cbind(PSex=Gbeta$predictedSex,Sex=Gbeta$Sex)
+getSex(Gbeta) #get sex
+cbind(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
+table(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
 
 #phenodata
-pheno<-cbind(Sex=Gbeta$predictedSex, Plate_ID=Gbeta$Plate_ID, cellprop)
+pheno<-cbind(Sex=pData(WB)$Sex, Plate_ID=pData(WB)$Plate_ID, cellprop)
 # 1 female, 2 male
 
 #quick check of the distribution of sex among plates
@@ -66,6 +63,56 @@ barplot(Percentage, main="Distribution of sex within plates",
 pheno[,"Sex"]<-ifelse(pheno[,"Sex"]==2,0,1)
 # 1 female, 0 male
 
+## Cleaning the methylation data
+#  
+
+data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+IlluminaAnnot = data.frame(
+  Probe_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$Probe_rs,
+  Probe_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$Probe_maf,
+  CpG_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$CpG_rs,
+  CpG_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$CpG_maf,
+  SBE_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$SBE_rs,
+  SBE_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$SBE_maf,
+  Probe_SNPs_10=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.Illumina$Probe_SNPs_10,
+  chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
+  Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
+  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
+  UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
+  probeA=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqA,
+  probeB=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqB,
+  Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
+  SourceSeq=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$SourceSeq)
+
+## Create CpG name and annotate row names
+rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
+IlluminaAnnot$Name <-rownames(IlluminaAnnot)
+dim(IlluminaAnnot)
+
+# IlluminaAnnotation flag non-CpG (i.e "rs" and "ch" probes)
+IlluminaAnnot$NONCPG <- 1*(substring(rownames(IlluminaAnnot),1,2)=="ch") 
+table(IlluminaAnnot$NONCPG)  # 3,091  ch probes
+IlluminaAnnot = IlluminaAnnot[IlluminaAnnot$NONCPG==0,] 
+dim(IlluminaAnnot)
+
+IlluminaAnnot$SNP <- 1*(substring(rownames(IlluminaAnnot),1,2)=="rs") 
+table(IlluminaAnnot$SNP) # 0 actual SNP Data
+dim(IlluminaAnnot)
+
+## Remove probes with SNPs within 10 bps of the targetsite
+IlluminaAnnot<-subset(IlluminaAnnot, IlluminaAnnot$Probe_SNPs_10=="")
+dim(IlluminaAnnot)
+
+#Additional steps could be considered 
+#e.g. (removing Chen's probe, SNP associated probes with MAF>5%)
+
+# Intersect with clean betas after removing CpGs not detected in over 95% of the sample
+intersect = intersect(rownames(IlluminaAnnot), rownames(betas.bmiq))
+length(intersect)
+betas.clean = betas.bmiq[intersect,]
+dim(betas.clean)
+dim(IlluminaAnnot)
+
 #'# Running an Epigenome Wide Association
 #' Here we run an EWAS on sex (as a predictor of methylation)
 
@@ -76,7 +123,7 @@ CpG.level<-betas.bmiq[j,]
 CpG.name<-rownames(betas.bmiq)[j]
 
 #difference in methylation between different Sex
-rbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
+cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
       Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
       Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
       Max=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],max)),3),
@@ -84,44 +131,36 @@ rbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
       N=table(pheno[,"Sex"]))
 
 boxplot(CpG.level ~ pheno[,"Sex"])
-# plot(pheno[,"Sex"],CpG.level, main="Methylation and Sex", ylab="DNA methytilation level", xlab="Sex") 
-# abline(lm(CpG.level~pheno[,"Sex"]), col="red")
 summary(lm(CpG.level~pheno[,"Sex"]))
 
-#EWAS 
-results1<-cpg.assoc(betas.bmiq,pheno[,"Sex"])
-results1
+## EWAS and results 
 
+# only sex as predictor
+results1<-cpg.assoc(betas.bmiq,pheno[,"Sex"])
+
+head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
 #check with previous results
 cbind(results1$coefficients[j,4:5], results$results[j,c(1,3)])
 
 #EWAS with adjustment for cell types
 results2<-cpg.assoc(betas.bmiq,pheno[,"Sex"], 
                     covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  pheno[,"NK"]  + pheno[,"Bcell"] + pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
-results2
 
-#' looking at results
- 
-Coef<-results1$coefficients[,4:5]
-setnames(Coef, colnames(Coef), c("Est", "SD"))
-Coef<-Coef[order(rownames(Coef)),]
-Pval<-results$results[,c(1,3)]
-setnames(Pval, colnames(Pval), c("CpG", "Pval"))
-Pval<-Pval[order(Pval$CpG),]
-identical(rownames(Coef), Pval$CpG)
-#TRUE
-
-Results_Sex<-data.frame(cbind(Coef,Pval))
-save(Results_Sex, file=paste0(path.to.output,"Results_Sex_", Sys.Date(),".RData"))
-write.csv(Results_Sex, file=paste0(path.to.output,"Results_Sex_", Sys.Date(),".csv"))
-
-
+head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3]))
 
 #' qqplot and lambda interpretation
+par(mfrow=c(1,2))
+plot(results1, main="QQ plot for association between methylation and sex")
+plot(results2, main="QQ plot for association between methylation and sex- adjusted for cells proportion")
 
 # Lambda
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
 lambda(results$results[,3])
+
+# Manhattan plot
+data(annotation,package="CpGassoc")
+manhattan(results1,annotation$TargetID,annotation$CHR,annotation$MAPINFO)
+manhattan(results2,annotation$TargetID,annotation$CHR,annotation$MAPINFO)
 
 # Volcano Plot
 nCpG=dim(B)[1]
@@ -130,9 +169,6 @@ plot(Results_Sex$Est,-log10(Results_Sex$Pval), ylim=c(0,5), xlab="Estimate", yla
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 #relaxed thresold (just for us)
 abline(h=-log10(0.05/(nCpG)), lty=1, col="blue", lwd=2)
-
-
-#' volcano plot interpretation
 
 #' looking at a top hit
 
