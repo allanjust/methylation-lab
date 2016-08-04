@@ -168,26 +168,29 @@ lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qc
 lambda(results1$results[,3])
 lambda(results2$results[,3])
 
-# Volcano Plot
+# Volcano Plot-results1
 nCpG=dim(betas.clean)[1]
 plot(results1$coefficients[,4],-log10(results1$results[,3]),  xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
 #Bonferroni treshold
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
+# Volcano Plot-results2
 plot(results2$coefficients[,4],-log10(results2$results[,3]), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot, adjusted for cell proportion")
 #Bonferroni treshold
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
 # Manhattan plot
+
+#the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
 datamanhat<-data.frame(CpG=results1$results[,1],Chr=as.character(IlluminaAnnot$chr),
                      Mapinfo=IlluminaAnnot$pos,Pval=results1$results[,3])
-
-head(datamanhat)
-
+#Reformat the variable Chr
 datamanhat$Chr<-sub("chr","",datamanhat$Chr)
 datamanhat$Chr[which(datamanhat$Chr=="X")]<-"23"
 datamanhat$Chr[which(datamanhat$Chr=="Y")]<-"24"
 datamanhat$Chr<-as.numeric(datamanhat$Chr)
+
+#manhattan plot
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG")
 
 
