@@ -10,6 +10,7 @@ dim(WB)
 suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
+  library(qqman)
   library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 })
 
@@ -76,6 +77,7 @@ IlluminaAnnot = data.frame(
   SBE_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$SBE_maf,
   Probe_SNPs_10=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.Illumina$Probe_SNPs_10,
   chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
+  pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
   Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
   UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
   UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
@@ -117,12 +119,13 @@ dim(IlluminaAnnot)
 #' Here we run an EWAS on sex (as a predictor of methylation)
 
 # first we can run a single regression on a single cpg
-j<-2835
+j<-2744
 
-CpG.level<-betas.bmiq[j,]
+CpG.level<-betas.clean[j,]
 CpG.name<-rownames(betas.bmiq)[j]
 
-#difference in methylation between different Sex
+# difference in methylation between different Sex
+# some statistics
 cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
       Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
       Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
@@ -136,17 +139,24 @@ summary(lm(CpG.level~pheno[,"Sex"]))
 ## EWAS and results 
 
 # only sex as predictor
-results1<-cpg.assoc(betas.bmiq,pheno[,"Sex"])
+results1<-cpg.assoc(betas.clean,pheno[,"Sex"])
 
+#look at the results
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
+head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
 #check with previous results
-cbind(results1$coefficients[j,4:5], results$results[j,c(1,3)])
+cbind(results1$coefficients[j,4:5], results1$results[j,c(1,3)])
+
+#Bonferroni hits
+table(results1$results[,3]<0.05/(nCpG))
 
 #EWAS with adjustment for cell types
-results2<-cpg.assoc(betas.bmiq,pheno[,"Sex"], 
+results2<-cpg.assoc(betas.clean,pheno[,"Sex"], 
                     covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  pheno[,"NK"]  + pheno[,"Bcell"] + pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
 
-head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3]))
+#look at the results
+head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3])[order(results2$results[,3]),])
+table(results2$results[,3]<0.05/(nCpG))
 
 #' qqplot and lambda interpretation
 par(mfrow=c(1,2))
@@ -155,23 +165,30 @@ plot(results2, main="QQ plot for association between methylation and sex- adjust
 
 # Lambda
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
-lambda(results$results[,3])
-
-# Manhattan plot
-data(annotation,package="CpGassoc")
-manhattan(results1,annotation$TargetID,annotation$CHR,annotation$MAPINFO)
-manhattan(results2,annotation$TargetID,annotation$CHR,annotation$MAPINFO)
+lambda(results1$results[,3])
+lambda(results2$results[,3])
 
 # Volcano Plot
-nCpG=dim(B)[1]
-plot(Results_Sex$Est,-log10(Results_Sex$Pval), ylim=c(0,5), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
-#canonical thresold
+nCpG=dim(betas.clean)[1]
+plot(results1$coefficients[,4],-log10(results1$results[,3]),  xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
+#Bonferroni treshold
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-#relaxed thresold (just for us)
-abline(h=-log10(0.05/(nCpG)), lty=1, col="blue", lwd=2)
 
-#' looking at a top hit
+plot(results2$coefficients[,4],-log10(results2$results[,3]), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot, adjusted for cell proportion")
+#Bonferroni treshold
+abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
+# Manhattan plot
+datamanhat<-data.frame(CpG=results1$results[,1],Chr=as.character(IlluminaAnnot$chr),
+                     Mapinfo=IlluminaAnnot$pos,Pval=results1$results[,3])
+
+head(datamanhat)
+
+datamanhat$Chr<-sub("chr","",datamanhat$Chr)
+datamanhat$Chr[which(datamanhat$Chr=="X")]<-"23"
+datamanhat$Chr[which(datamanhat$Chr=="Y")]<-"24"
+datamanhat$Chr<-as.numeric(datamanhat$Chr)
+manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG")
 
 
 #' End of script
