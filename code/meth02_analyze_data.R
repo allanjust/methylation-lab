@@ -2,11 +2,11 @@
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R  
 
-#Elena Colicino
 
 #' recall that we have a processed dataset with 15 samples
 dim(WB)
 
+#libraries
 suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
@@ -14,39 +14,10 @@ suppressPackageStartupMessages({
   library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 })
 
-# # Evaluate any remaining batch effects from design using the principal component analysis
-# PCobject = prcomp(na.omit(t(betas.bmiq)), retx = T, center = T, scale. = T);
-# # Extract the Principal Components from SVD
-# PCs = PCobject$x;
-# 
-# # Extract the proportion of variability explained by the top R=2 PC.
-# R = 2
-# propvar = summary(PCobject)$importance["Proportion of Variance", 1:R]
-# sum(propvar)*100
-# cummvar = summary(PCobject)$importance["Cumulative Proportion", 1:R]
-# cummvar
-# 
-# X = 1  # First PC
-# Y = 2  # Second PC
-# 
-# # Save Graphic (Plate Effects)
-# variable = as.factor(WB$Plate_ID)
-# myColors = rainbow(length(table(variable)))
-# names(myColors) = levels(variable)
-# # X-Y
-# par(mfrow=c(1,1))
-# plot(PCs[,X], PCs[,Y], xlab = paste("PC", X,"(",round(propvar[X]*100,1),"%)", sep =""),
-#      ylab = paste("PC", Y, "(",round(propvar[Y]*100,1), "%)", sep =""), pch=16,
-#      col = myColors)
-# legend("topleft", c("Plate 1","Plate 2"), pch=c(21,21),bty='n', cex=1,pt.bg = myColors, col=myColors)
-
-## Extract sex prediction from methylation data
-# use median total intensity of the X chromosome-mapped probes and
-# the median total intensity of the Y-chromosome-mapped probes
-
+## predict Sex from methylation
 Gbeta<-mapToGenome(WB)  #map to the genome
 getSex(Gbeta) #get sex
-cbind(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
+cbind(Sex=pData(WB)$Sex,PSex=getSex(Gbeta)$predictedSex)
 table(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
 
 #phenodata
@@ -64,11 +35,15 @@ barplot(Percentage, main="Distribution of sex within plates",
 pheno[,"Sex"]<-ifelse(pheno[,"Sex"]==2,0,1)
 # 1 female, 0 male
 
-## Cleaning the methylation data
-#  
-
+## Cleaning up the methylation data
+## upload annotation file
 data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 IlluminaAnnot = data.frame(
+  chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
+  pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
+  Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
+  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
+  UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
   Probe_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$Probe_rs,
   Probe_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$Probe_maf,
   CpG_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$CpG_rs,
@@ -76,11 +51,6 @@ IlluminaAnnot = data.frame(
   SBE_rs=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$SBE_rs,
   SBE_maf=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.137CommonSingle$SBE_maf,
   Probe_SNPs_10=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$SNPs.Illumina$Probe_SNPs_10,
-  chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
-  pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
-  Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
-  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
-  UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
   probeA=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqA,
   probeB=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqB,
   Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
@@ -105,10 +75,9 @@ dim(IlluminaAnnot)
 IlluminaAnnot<-subset(IlluminaAnnot, IlluminaAnnot$Probe_SNPs_10=="")
 dim(IlluminaAnnot)
 
-#Additional steps could be considered 
-#e.g. (removing Chen's probe, SNP associated probes with MAF>5%)
+#Note: Additional cleaning steps could be considered 
 
-# Intersect with clean betas after removing CpGs not detected in over 95% of the sample
+# Intersect with clean betas 
 intersect = intersect(rownames(IlluminaAnnot), rownames(betas.bmiq))
 length(intersect)
 betas.clean = betas.bmiq[intersect,]
@@ -118,11 +87,12 @@ dim(IlluminaAnnot)
 #'# Running an Epigenome Wide Association
 #' Here we run an EWAS on sex (as a predictor of methylation)
 
-# first we can run a single regression on a single cpg
+# first we can run a linear regression on a single cpg
 j<-2744
 
 CpG.level<-betas.clean[j,]
-CpG.name<-rownames(betas.bmiq)[j]
+CpG.name<-rownames(betas.clean)[j]
+CpG.name
 
 # difference in methylation between different Sex
 # some statistics
@@ -137,8 +107,10 @@ boxplot(CpG.level ~ pheno[,"Sex"])
 summary(lm(CpG.level~pheno[,"Sex"]))
 
 ## EWAS and results 
+nCpG=dim(betas.clean)[1]
+nCpG
 
-# only sex as predictor
+# sex as predictor
 results1<-cpg.assoc(betas.clean,pheno[,"Sex"])
 
 #look at the results
@@ -160,7 +132,7 @@ table(results2$results[,3]<0.05/(nCpG))
 
 #' qqplot and lambda interpretation
 par(mfrow=c(1,2))
-plot(results1, main="QQ plot for association between methylation and sex")
+#plot(results1, main="QQ plot for association between methylation and sex")
 plot(results2, main="QQ plot for association between methylation and sex- adjusted for cells proportion")
 
 # Lambda
@@ -168,22 +140,21 @@ lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qc
 lambda(results1$results[,3])
 lambda(results2$results[,3])
 
-# Volcano Plot-results1
-nCpG=dim(betas.clean)[1]
-plot(results1$coefficients[,4],-log10(results1$results[,3]),  xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
-#Bonferroni treshold
-abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
+# # Volcano Plot-results1
+# plot(results1$coefficients[,4],-log10(results1$results[,3]),  xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
+# #Bonferroni treshold
+# abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
 # Volcano Plot-results2
-plot(results2$coefficients[,4],-log10(results2$results[,3]), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot, adjusted for cell proportion")
+plot(results2$coefficients[,4],-log10(results2$results[,3]), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
 #Bonferroni treshold
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
 # Manhattan plot
 
 #the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
-datamanhat<-data.frame(CpG=results1$results[,1],Chr=as.character(IlluminaAnnot$chr),
-                     Mapinfo=IlluminaAnnot$pos,Pval=results1$results[,3])
+datamanhat<-data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
+                     Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
 #Reformat the variable Chr
 datamanhat$Chr<-sub("chr","",datamanhat$Chr)
 datamanhat$Chr[which(datamanhat$Chr=="X")]<-"23"
@@ -191,7 +162,6 @@ datamanhat$Chr[which(datamanhat$Chr=="Y")]<-"24"
 datamanhat$Chr<-as.numeric(datamanhat$Chr)
 
 #manhattan plot
-manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG")
-
+manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
 
 #' End of script
