@@ -3,7 +3,7 @@
 #'  meth01_process_data.R  
 
 
-#' recall that we have a processed dataset with 15 samples
+#' we have a processed dataset with 15 samples
 dim(WB)
 
 #libraries
@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
   library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 })
 
-## predict Sex from methylation
+## predict gender from methylation
 Gbeta<-mapToGenome(WB)  #map to the genome
 getSex(Gbeta) #get sex
 cbind(Sex=pData(WB)$Sex,PSex=getSex(Gbeta)$predictedSex)
@@ -24,8 +24,7 @@ table(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
 pheno<-cbind(Sex=pData(WB)$Sex, Plate_ID=pData(WB)$Plate_ID, cellprop)
 # 1 female, 2 male
 
-#quick check of the distribution of sex among plates
-#check if sex is well distributed between plates
+#quick check of the distribution of gender between plates
 counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
 Percentage <- prop.table(counts, 2); 
 barplot(Percentage, main="Distribution of sex within plates",
@@ -140,18 +139,12 @@ lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qc
 lambda(results1$results[,3])
 lambda(results2$results[,3])
 
-# # Volcano Plot-results1
-# plot(results1$coefficients[,4],-log10(results1$results[,3]),  xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot")
-# #Bonferroni treshold
-# abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-
 # Volcano Plot-results2
 plot(results2$coefficients[,4],-log10(results2$results[,3]), xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
 #Bonferroni treshold
 abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
-# Manhattan plot
-
+# Manhattan plot -results2
 #the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
 datamanhat<-data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
                      Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
