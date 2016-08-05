@@ -64,6 +64,7 @@ system.time(WB.noob <- preprocessNoob(WB))
 #' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)
 WB.noob
 
+
 #' we can look at a few methylation values on the fly
 #' and see that the preprocessing changed them
 # first three CpGs on the first three samples
@@ -74,6 +75,7 @@ print(getBeta(WB.noob)[1:3,1:3], digits = 2)
 
 
 #' Distribution of beta-values: before and after normalization
+#+ fig.width=8, fig.height=6, dpi=300
 plot(density(getBeta(WB.noob)[,1]), col="blue",ylim=c(0,5),
      main='Beta Density',xlab=expression(beta~"-value")) # plot the first density
 for(i in 2:dim(getBeta(WB.noob))[2]){ #Plot remaning noob adjusted samples
@@ -86,11 +88,30 @@ legend("topright", c("Noob","Raw"),
        lty=c(1,1), title="Normalization", 
        bty='n', cex=0.8, col=c("blue","magenta"))
 
+
+#' There are also probes that fail detection due to low intensities
+#' Fortunately there are negative control to detect background signal
+detect.p = detectionP(WB, type = "m+u")
+#' Proportion of failed probes per sample 
+#' P>0.01(i.e. not significant compared to background signal)
+knitr::kable(t(as.matrix(colMeans(detect.p >0.01)*100)),digits=2)
+#'Number of failed probes
+sum(detect.p >0.01)
+#'Restrict data to good probes only
+detect.p[detect.p > 0.01] <-NA
+detect.p <- na.omit(detect.p)
+intersect <- intersect(rownames(getAnnotation(WB)), rownames(detect.p))
+length(intersect)
+# Filter Bad probes from rgSet
+length(rownames(WB.noob))
+WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
+length(rownames(WB.noob))
+rm(intersect,detect.p)
+
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
-## BMIQ with EnMix: multi-processor wrapper of BMIQ
+## RCP with EnMix: Regression on Correlated Probes
 require(ENmix)
-cores<-detectCores()
-betas.bmiq<-bmiq.mc(WB.noob, nCores=cores-1) #4-cores~2.8 min;3-cores~3.3 min
+betas.bmiq<-rcp(WB.noob)
 dim(betas.bmiq)
 
 ## Annotation of Infinium type for each probe (I vs II)
@@ -98,10 +119,11 @@ typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
 typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
 onetwo <- rep(1, nrow(betas.bmiq))
 onetwo[rownames(betas.bmiq) %in% typeII] <- 2
-table(onetwo)
+knitr::kable(t(table(onetwo)))
 
 
-#' Density plots by Infinium type: before and after BMIQ 
+#' Density plots by Infinium type: before and after RCP calibration
+#+ fig.width=14, fig.height=7, dpi=300
 par(mfrow=c(1,2)) # Side-by-side density distributions 
 # Noob adjusted Beta density
 plot(density(getBeta(WB.noob)[,1][onetwo==1]), col="blue",ylim=c(0,6), 
@@ -118,7 +140,7 @@ legend("topright", c("Infinium I","Infinium II"),
 
 # BMIQ adjusted Beta Density
 plot(density(betas.bmiq[,1][onetwo==1]), col="blue",ylim=c(0,6), 
-     main='Beta density BMIQ adjusted',xlab=expression(beta~"-value")) # plot the first density
+     main='Beta density probe-type adjusted',xlab=expression(beta~"-value")) # plot the first density
 for(i in 2:dim(betas.bmiq)[2]){          # Add the lines to the existing plot
   lines(density(betas.bmiq[,i][onetwo==1]), col="blue")        
 }
@@ -129,6 +151,50 @@ legend("topright", c("Infinium I","Infinium II"),
        lty=c(1,1), title="Infinium type", 
        bty='n', cex=0.8, col=c("blue","red"))
 
+#' ## Batch effects
+#' Samples are processed in plates 
+#' this can create batch effects with different intensities by plate
+#' Let's check if we have a plate effects in our data
+knitr::kable(t(as.matrix(table(pData(WB)$Plate_ID))),col.names = c("Plate 1","Plate2"))
+
+
+#' Principal Component Analysis for the DNA methylation data
+# Calculate major sources of variability of DNA methylation using PCA
+PCobject = prcomp(t(betas.bmiq), retx = T, center = T, scale. = T)
+
+# Extract the Principal Components from SVD
+PCs <- PCobject$x
+# Proportion of variance explained by each PC
+cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
+knitr::kable(t(as.matrix(cummvar)),digits = 2)
+
+
+#' Is the major source of variability associated with sample plate?
+#+ fig.width=6, fig.height=6, dpi=300
+boxplot(PCs[,1]~pData(WB)$Plate_ID,
+        xlab = "Sample Plate",ylab="PC1",
+        col=c("red","blue"))
+t.test(PCs[,1]~pData(WB)$Plate_ID)
+
+#' Removing batch effects using ComBat from the sva package
+suppressMessages(require(sva))
+# From Beta-values to M-values
+Mvals<-log2(betas.bmiq)-log2(1-betas.bmiq)
+Mvals.ComBat = ComBat(Mvals,batch = pData(WB)$Plate_ID)
+# From to M-values back to Beta-values
+betas.bmiq<-2^Mvals.ComBat/(1+2^Mvals.ComBat)
+
+#' PCA after removing batch effects
+PCobject = prcomp(t(betas.bmiq), retx = T, center = T, scale. = T)
+PCs <- PCobject$x
+cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
+knitr::kable(t(as.matrix(cummvar)),digits = 2)
+#' The first PC is no longer associated with sample plate
+#+ fig.width=6, fig.height=6, dpi=300
+boxplot(PCs[,1]~pData(WB)$Plate_ID,
+        xlab = "Sample Plate",ylab="PC1",
+        col=c("red","blue"))
+t.test(PCs[,1]~pData(WB)$Plate_ID)
 #' just checking how much memory we are using
 #mem_used()
 

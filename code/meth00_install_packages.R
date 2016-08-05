@@ -13,7 +13,7 @@ update.packages()
 
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
-methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr", "data.table")
+methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr", "data.table","qqman")
 methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET","ENmix","sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "RPMM")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
