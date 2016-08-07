@@ -4,6 +4,7 @@
 
 
 #' we have a processed dataset with 15 samples
+rmarkdown::render("meth01_process_data.R")
 dim(WB)
 
 #libraries
@@ -21,7 +22,7 @@ cbind(Sex=pData(WB)$Sex,PSex=getSex(Gbeta)$predictedSex)
 table(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
 
 #phenodata
-pheno<-cbind(Sex=pData(WB)$Sex, Plate_ID=pData(WB)$Plate_ID, cellprop)
+pheno<-as.data.frame(cbind(Sex=pData(WB)$Sex, Plate_ID=pData(WB)$Plate_ID, cellprop))
 # 1 female, 2 male
 
 #quick check of the distribution of gender between plates
@@ -80,6 +81,7 @@ dim(IlluminaAnnot)
 intersect = intersect(rownames(IlluminaAnnot), rownames(betas.bmiq))
 length(intersect)
 betas.clean = betas.bmiq[intersect,]
+IlluminaAnnot = IlluminaAnnot [intersect,]
 dim(betas.clean)
 dim(IlluminaAnnot)
 
@@ -156,6 +158,7 @@ datamanhat$Chr[which(datamanhat$Chr=="Y")]<-"24"
 datamanhat$Chr<-as.numeric(datamanhat$Chr)
 
 #manhattan plot
+par(mfrow=c(1,1))
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
 
 #' End of script
