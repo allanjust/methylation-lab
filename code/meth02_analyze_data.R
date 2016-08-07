@@ -135,7 +135,7 @@ table(results2$results[,3]<0.05/(nCpG))
 #+ fig.width=13, fig.height=7, dpi=300
 par(mfrow=c(1,2))
 #plot(results1, main="QQ plot for association between methylation and sex")
-plot(results2, main="QQ plot for association between methylation and sex- adjusted for cells proportion")
+plot(results2, main="QQ plot for association between methylation and sex \n adjusted for cells proportion")
 
 # Lambda
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)

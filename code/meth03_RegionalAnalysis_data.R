@@ -24,9 +24,9 @@ myannotation <- cpg.annotate("array", Mvals.ComBat, analysis.type="differential"
                              design=model, coef=2)
 
 #'Regions are now agglomerated from groups of significant probes where the distance to the next consecutive probe is less than lambda nucleotides away
-dmrcoutput.sex <- dmrcate(myannotation, lambda=1000, C=2)
+dmrcoutput.sex <- suppressMessages(dmrcate(myannotation, lambda=1000, C=2))
 
-#'Let's look at our results
+#'Let's look at the results
 head(dmrcoutput.sex$results)
 
 #'Visualizing the data can help us understand where the region lies relative to promoters, CpGs islands or enhancers
@@ -37,7 +37,7 @@ results.ranges[2]
 
 #' Plot the DMR using the Gviz
 
-#'If you are interested in plotting genomic data the Gviz is extremely useful
+#' if you are interested in plotting genomic data the Gviz is extremely useful
 #'Let's look at the first region
 results.ranges[1]
 pheno$Sex<-ifelse(pheno$Sex==1,"Female","Male")

@@ -170,7 +170,6 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
 
 #' Is the major source of variability associated with sample plate?
-#+ fig.width=6, fig.height=6, dpi=300
 boxplot(PCs[,1]~pData(WB)$Plate_ID,
         xlab = "Sample Plate",ylab="PC1",
         col=c("red","blue"))
@@ -190,15 +189,16 @@ PCs <- PCobject$x
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
 #' The first PC is no longer associated with sample plate
-#+ fig.width=6, fig.height=6, dpi=300
 boxplot(PCs[,1]~pData(WB)$Plate_ID,
         xlab = "Sample Plate",ylab="PC1",
         col=c("red","blue"))
 t.test(PCs[,1]~pData(WB)$Plate_ID)
+#' ComBat removed the apparent batch effect
 #' just checking how much memory we are using
 #mem_used()
 
 #' this command will check the maximum memory usage on Windows
 memory.size(max = T)
 
-#' End of script
+#' End of script 1
+#' 
