@@ -19,6 +19,7 @@
 suppressMessages(library(minfi)) # popular package for methylation data
 library(FlowSorted.CordBlood.450k) # example dataset
 library(pryr) # for monitoring memory use
+library(ENmix) # probe type adjustment "rcp"
 
 #' bring a 450k dataset in to memory (from eponymous BioC package above)
 #'   see Bakulski et al. Epigenetics 2016.
@@ -51,7 +52,7 @@ cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
 knitr::kable(cellprop, digits = 2)
 #' note that they are close to summing to 1
 summary(rowSums(cellprop))
-#'Distribution of estiamted cell types
+#'Distribution of estimated cell types
 boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %")
 
 #'
@@ -76,29 +77,34 @@ print(getBeta(WB.noob)[1:3,1:3], digits = 2)
 
 #' Distribution of beta-values: before and after normalization
 #+ fig.width=8, fig.height=6, dpi=300
-plot(density(getBeta(WB.noob)[,1]), col="blue",ylim=c(0,5),
-     main='Beta Density',xlab=expression(beta~"-value")) # plot the first density
-for(i in 2:dim(getBeta(WB.noob))[2]){ #Plot remaning noob adjusted samples
-  lines(density(getBeta(WB.noob)[,i]), col="blue")      
-}
-for(i in 1:dim(getBeta(WB.noob))[2]){ # Add lines to the existing plot for unadjusted betas
-  lines(density(na.omit(getBeta(WB))[,i]), col="magenta")        
-}
+# plot(density(getBeta(WB.noob)[,1]), col="blue",ylim=c(0,5),
+#      main='Beta Density',xlab=expression(beta~"-value")) # plot the first density
+# for(i in 2:dim(getBeta(WB.noob))[2]){ #Plot remaning noob adjusted samples
+#   lines(density(getBeta(WB.noob)[,i]), col="blue")      
+# }
+# for(i in 1:dim(getBeta(WB.noob))[2]){ # Add lines to the existing plot for unadjusted betas
+#   lines(density(na.omit(getBeta(WB))[,i]), col="magenta")        
+# }
+# legend("topright", c("Noob","Raw"), 
+#        lty=c(1,1), title="Normalization", 
+#        bty='n', cex=0.8, col=c("blue","magenta"))
+densityPlot(WB, main = "density plots before and after preprocessing", pal="blue")
+densityPlot(WB.noob, add = F, pal = "magenta")
+# Add legend
 legend("topright", c("Noob","Raw"), 
-       lty=c(1,1), title="Normalization", 
-       bty='n', cex=0.8, col=c("blue","magenta"))
-
+lty=c(1,1), title="Normalization", 
+bty='n', cex=0.8, col=c("blue","magenta"))
 
 #' There are also probes that fail detection due to low intensities
 #' Fortunately there are negative control to detect background signal
-detect.p = detectionP(WB, type = "m+u")
+detect.p <- detectionP(WB, type = "m+u")
 #' Proportion of failed probes per sample 
-#' P>0.01(i.e. not significant compared to background signal)
-knitr::kable(t(as.matrix(colMeans(detect.p >0.01)*100)),digits=2)
+#' P>0.01 (i.e. not significant compared to background signal)
+knitr::kable(t(as.matrix(colMeans(detect.p > 0.01) * 100)), digits = 2)
 #'Number of failed probes
-sum(detect.p >0.01)
+sum(detect.p > 0.01)
 #'Restrict data to good probes only
-detect.p[detect.p > 0.01] <-NA
+detect.p[detect.p > 0.01] <- NA
 detect.p <- na.omit(detect.p)
 intersect <- intersect(rownames(getAnnotation(WB)), rownames(detect.p))
 length(intersect)
@@ -109,18 +115,18 @@ length(rownames(WB.noob))
 rm(intersect,detect.p)
 
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
-## RCP with EnMix: Regression on Correlated Probes
-require(ENmix)
-betas.bmiq<-rcp(WB.noob)
-dim(betas.bmiq)
+## RCP with EnMix: Regression on Correlated Probes (Niu et al. Bioinformatics 2016)
+betas.rcp<-rcp(WB.noob)
+dim(betas.rcp)
+#' note that this package takes it out of the minfi objects - result is a matrix
+class(betas.rcp) 
 
 ## Annotation of Infinium type for each probe (I vs II)
 typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
 typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
-onetwo <- rep(1, nrow(betas.bmiq))
-onetwo[rownames(betas.bmiq) %in% typeII] <- 2
+onetwo <- rep(1, nrow(betas.rcp))
+onetwo[rownames(betas.rcp) %in% typeII] <- 2
 knitr::kable(t(table(onetwo)))
-
 
 #' Density plots by Infinium type: before and after RCP calibration
 #+ fig.width=14, fig.height=7, dpi=300
@@ -138,14 +144,14 @@ legend("topright", c("Infinium I","Infinium II"),
        lty=c(1,1), title="Infinium type", 
        bty='n', cex=0.8, col=c("blue","red"))
 
-# BMIQ adjusted Beta Density
-plot(density(betas.bmiq[,1][onetwo==1]), col="blue",ylim=c(0,6), 
+# RCP adjusted Beta Density
+plot(density(betas.rcp[,1][onetwo==1]), col="blue",ylim=c(0,6), 
      main='Beta density probe-type adjusted',xlab=expression(beta~"-value")) # plot the first density
-for(i in 2:dim(betas.bmiq)[2]){          # Add the lines to the existing plot
-  lines(density(betas.bmiq[,i][onetwo==1]), col="blue")        
+for(i in 2:dim(betas.rcp)[2]){          # Add the lines to the existing plot
+  lines(density(betas.rcp[,i][onetwo==1]), col="blue")        
 }
-for(i in 1:dim(betas.bmiq)[2]){          # Add the lines to the existing plot
-  lines(density(betas.bmiq[,i][onetwo==2]), col="red")        
+for(i in 1:dim(betas.rcp)[2]){          # Add the lines to the existing plot
+  lines(density(betas.rcp[,i][onetwo==2]), col="red")        
 }
 legend("topright", c("Infinium I","Infinium II"), 
        lty=c(1,1), title="Infinium type", 
@@ -160,7 +166,7 @@ knitr::kable(t(as.matrix(table(pData(WB)$Plate_ID))),col.names = c("Plate 1","Pl
 
 #' Principal Component Analysis for the DNA methylation data
 # Calculate major sources of variability of DNA methylation using PCA
-PCobject = prcomp(t(betas.bmiq), retx = T, center = T, scale. = T)
+PCobject = prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 
 # Extract the Principal Components from SVD
 PCs <- PCobject$x
@@ -178,13 +184,13 @@ t.test(PCs[,1]~pData(WB)$Plate_ID)
 #' Removing batch effects using ComBat from the sva package
 suppressMessages(require(sva))
 # From Beta-values to M-values
-Mvals<-log2(betas.bmiq)-log2(1-betas.bmiq)
+Mvals<-log2(betas.rcp)-log2(1-betas.rcp)
 Mvals.ComBat = ComBat(Mvals,batch = pData(WB)$Plate_ID)
 # From to M-values back to Beta-values
-betas.bmiq<-2^Mvals.ComBat/(1+2^Mvals.ComBat)
+betas.rcp<-2^Mvals.ComBat/(1+2^Mvals.ComBat)
 
 #' PCA after removing batch effects
-PCobject = prcomp(t(betas.bmiq), retx = T, center = T, scale. = T)
+PCobject = prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
