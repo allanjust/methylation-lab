@@ -95,6 +95,7 @@ legend("topright", c("Noob","Raw"),
 lty=c(1,1), title="Normalization", 
 bty='n', cex=0.8, col=c("blue","magenta"))
 
+
 #' There are also probes that fail detection due to low intensities
 #' Fortunately there are negative control to detect background signal
 detect.p <- detectionP(WB, type = "m+u")
