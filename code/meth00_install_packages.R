@@ -14,16 +14,21 @@ update.packages()
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr", "data.table","qqman")
-methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET","ENmix","sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "RPMM","DMRcate")
+methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET", "ENmix",
+                      "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "RPMM", "DMRcate")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
-if(length(toinstallCRAN >= 1)) install.packages(toinstallCRAN)
+if(length(toinstallCRAN >= 1)) {
+  install.packages(toinstallCRAN)
+  cat("finished installing new packages from CRAN\n")
+} else cat("packages we need from CRAN are already installed\n")
 #' install these from BioConductor:
 toinstallBioC <- setdiff(methpackagesBioC, installed.packages()[,1])
 if(length(toinstallBioC >= 1)) {
   source("https://bioconductor.org/biocLite.R")
   biocLite(toinstallBioC, suppressUpdates = T)
-}  
+  cat("finished installing new packages from BioConductor\n")
+} else cat("packages we need from BioConductor are already installed\n")
 #' cleanup
 rm(methpackagesCRAN, methpackagesBioC, toinstallCRAN, toinstallBioC)
 
