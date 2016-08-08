@@ -3,9 +3,11 @@
 #'  meth01_process_data.R  
 
 
-#' we have a processed dataset with 15 samples
-rmarkdown::render("meth01_process_data.R")
-dim(WB)
+#' we have a processed dataset with 15 samples (otherwise we run script 01)
+if(!exists("WB.noob")){
+  rmarkdown::render("meth01_process_data.R")
+}
+dim(WB.noob)
 
 #libraries
 suppressPackageStartupMessages({
@@ -16,13 +18,13 @@ suppressPackageStartupMessages({
 })
 
 ## predict gender from methylation
-Gbeta<-mapToGenome(WB)  #map to the genome
+Gbeta<-mapToGenome(WB.noob)  #map to the genome
 getSex(Gbeta) #get sex
-cbind(Sex=pData(WB)$Sex,PSex=getSex(Gbeta)$predictedSex)
-table(pData(WB)$Sex,getSex(Gbeta)$predictedSex)
+cbind(Sex=pData(WB.noob)$Sex,PSex=getSex(Gbeta)$predictedSex)
+table(pData(WB.noob)$Sex,getSex(Gbeta)$predictedSex)
 
 #phenodata
-pheno<-as.data.frame(cbind(Sex=pData(WB)$Sex, Plate_ID=pData(WB)$Plate_ID, cellprop))
+pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
 # 1 female, 2 male
 
 #quick check of the distribution of gender between plates
@@ -89,10 +91,10 @@ dim(IlluminaAnnot)
 #' Here we run an EWAS on sex (as a predictor of methylation)
 
 # first we can run a linear regression on a single cpg
-j<-2744
+j <-2744
 
-CpG.level<-betas.clean[j,]
-CpG.name<-rownames(betas.clean)[j]
+CpG.level <- betas.clean[j,]
+CpG.name <- rownames(betas.clean)[j]
 CpG.name
 
 # difference in methylation between different Sex
@@ -108,11 +110,11 @@ boxplot(CpG.level ~ pheno[,"Sex"])
 summary(lm(CpG.level~pheno[,"Sex"]))
 
 ## EWAS and results 
-nCpG=dim(betas.clean)[1]
+nCpG <- dim(betas.clean)[1]
 nCpG
 
 # sex as predictor
-results1<-cpg.assoc(betas.clean,pheno[,"Sex"])
+results1 <- cpg.assoc(betas.clean,pheno[,"Sex"])
 
 #look at the results
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
@@ -120,12 +122,14 @@ head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(resu
 #check with previous results
 cbind(results1$coefficients[j,4:5], results1$results[j,c(1,3)])
 
-#Bonferroni hits
+#Bonferroni significant hits
 table(results1$results[,3]<0.05/(nCpG))
 
 #EWAS with adjustment for cell types
-results2<-cpg.assoc(betas.clean,pheno[,"Sex"], 
-                    covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  pheno[,"NK"]  + pheno[,"Bcell"] + pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
+results2 <- cpg.assoc(betas.clean,pheno[,"Sex"], 
+                    covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  
+                      pheno[,"NK"]  + pheno[,"Bcell"] + 
+                      pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
 
 #look at the results
 head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3])[order(results2$results[,3]),])
@@ -149,17 +153,17 @@ abline(h=-log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 
 # Manhattan plot -results2
 #the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
-datamanhat<-data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
+datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
                      Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
 #Reformat the variable Chr
-datamanhat$Chr<-sub("chr","",datamanhat$Chr)
-datamanhat$Chr[which(datamanhat$Chr=="X")]<-"23"
-datamanhat$Chr[which(datamanhat$Chr=="Y")]<-"24"
-datamanhat$Chr<-as.numeric(datamanhat$Chr)
+datamanhat$Chr <- sub("chr","",datamanhat$Chr)
+datamanhat$Chr[which(datamanhat$Chr=="X")] <- "23"
+datamanhat$Chr[which(datamanhat$Chr=="Y")] <- "24"
+datamanhat$Chr <- as.numeric(datamanhat$Chr)
 
 #manhattan plot
 par(mfrow=c(1,1))
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
 
-#' End of script
+#' End of script 02
 #' 

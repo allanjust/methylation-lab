@@ -1,17 +1,20 @@
-#'# Regional DNA methylation analysis  
+#'# Regional DNA methylation analysis using DMRcate  
 #' Using data preprocessed in our script:  
-#'  meth01_process_data.R  & meth02_process_data.R 
-#'  
-rmarkdown::render("meth02_analyze_data.R")
+#'  meth01_process_data.R & meth02_process_data.R 
+
+#'  we have already set up our analysis
+if(!exists("pheno")){
+  rmarkdown::render("meth02_analyze_data.R")
+}
 
 #' Load package for regional analysis "DMRcate"
 #'  see Peters et al. Bioinformatics 2015. https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6
-#' Other popular options for conducting Regional DNA methylation analysis are Aclust and bumphunter 
+#' Other popular options for conducting Regional DNA methylation analysis in R are Aclust and bumphunter 
 suppressMessages(library(DMRcate)) # Popular package for regional DNA methylation analysis
 
 
 #' First we need to define a model
-model<-model.matrix(~as.factor(pheno$Sex)+
+model <- model.matrix(~as.factor(pheno$Sex)+
                      as.numeric(pheno$CD8T)+
                      as.numeric(pheno$NK)+
                      as.numeric(pheno$Bcell)+
@@ -19,17 +22,19 @@ model<-model.matrix(~as.factor(pheno$Sex)+
                      as.numeric(pheno$Gran)+
                      as.numeric(pheno$nRBC))
 
-#'Let's run the regional analysis
+#'Let's run the regional analysis using the Mvals from our preprocessed data
 myannotation <- cpg.annotate("array", Mvals.ComBat, analysis.type="differential",
                              design=model, coef=2)
 
-#'Regions are now agglomerated from groups of significant probes where the distance to the next consecutive probe is less than lambda nucleotides away
+#'Regions are now agglomerated from groups of significant probes 
+#'where the distance to the next consecutive probe is less than lambda nucleotides away
 dmrcoutput.sex <- suppressMessages(dmrcate(myannotation, lambda=1000, C=2))
 
 #'Let's look at the results
 head(dmrcoutput.sex$results)
 
-#'Visualizing the data can help us understand where the region lies relative to promoters, CpGs islands or enhancers
+#'Visualizing the data can help us understand where the region lies 
+#'relative to promoters, CpGs islands or enhancers
 
 #' Let's extract the genomic ranges and annotate to the genome
 results.ranges <- extractRanges(dmrcoutput.sex, genome = "hg19")
