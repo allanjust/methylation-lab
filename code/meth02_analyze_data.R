@@ -9,7 +9,7 @@ if(!exists("WB.noob")){
 }
 dim(WB.noob)
 
-#libraries
+#' load packages
 suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
@@ -18,17 +18,18 @@ suppressPackageStartupMessages({
   library(DMRcate)
 })
 
-## predict gender from methylation
-Gbeta<-mapToGenome(WB.noob)  #map to the genome
-getSex(Gbeta) #get sex
-cbind(Sex=pData(WB.noob)$Sex,PSex=getSex(Gbeta)$predictedSex)
+#'## predict gender from methylation
+Gbeta <- mapToGenome(WB.noob)  #map to the genome
+#' get sex predicts based on X and Y chromosome
+getSex(Gbeta) 
+#' we see that our predictions match the phenodata
 table(pData(WB.noob)$Sex,getSex(Gbeta)$predictedSex)
 
-#phenodata
+#' consolidate our phenodata
 pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
-# 1 female, 2 male
+#' 1 female, 2 male
 
-#quick check of the distribution of gender between plates
+#' quick check of the distribution of gender between plates
 counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
 Percentage <- prop.table(counts, 2); 
 barplot(Percentage, main="Distribution of sex within plates",
@@ -36,9 +37,9 @@ barplot(Percentage, main="Distribution of sex within plates",
         legend= c("F","M"),args.legend = list(x = "topleft"));
 
 pheno[,"Sex"]<-ifelse(pheno[,"Sex"]==2,0,1)
-# 1 female, 0 male
+#' 1 female, 0 male
 
-## Cleaning up the methylation data
+#'## Cleaning up the methylation data
 #' Filters a matrix of beta values by distance to SNP. Also removes crosshybridising probes and sex-chromosome probes.
 betas.clean<-rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
 nCpG <- dim(betas.clean)[1]
@@ -66,16 +67,18 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)
 boxplot(CpG.level ~ pheno[,"Sex"])
 summary(lm(CpG.level~pheno[,"Sex"]))
 
-#' EWAS and results 
+#'## EWAS and results 
 
 #' sex as predictor  
 #' note that CpGassoc is quite fast for running almost a half million regressions!
 system.time(results1 <- cpg.assoc(betas.clean,pheno[,"Sex"]))
 
-#' look at the results
+#' look at a few results  
+#' here effect size is ~ mean difference in methylation proportion
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
+#' and the top hits
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
-#' check with previous results
+#' check with previous result (running lm above)
 cbind(results1$coefficients[j,4:5], results1$results[j,c(1,3)])
 
 #' Bonferroni significant hits
@@ -112,12 +115,12 @@ lambda(results1$results[,3])
 #' Lambda after the cell type adjustment
 lambda(results2$results[,3])
 
-# Volcano Plot-results2
+#' Volcano Plot-results2
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
      xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
-#Bonferroni treshold
+#' Bonferroni threshold
 abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-#FDR treshold
+#' FDR threshold
 abline(h = -log10(max(results1$results[results1$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
@@ -134,7 +137,7 @@ IlluminaAnnot = data.frame(
   Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
   SourceSeq=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$SourceSeq)
 
-## Create CpG name and annotate row names
+#' Create CpG name and annotate row names
 rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
 IlluminaAnnot$Name <-rownames(IlluminaAnnot)
 dim(IlluminaAnnot)
