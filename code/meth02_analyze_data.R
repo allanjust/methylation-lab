@@ -24,6 +24,7 @@ Gbeta <- mapToGenome(WB.noob)  #map to the genome
 getSex(Gbeta) 
 #' we see that our predictions match the phenodata
 table(pData(WB.noob)$Sex,getSex(Gbeta)$predictedSex)
+rm(Gbeta)
 
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
@@ -32,16 +33,17 @@ pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Pla
 #' quick check of the distribution of gender between plates
 counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
 Percentage <- prop.table(counts, 2); 
-barplot(Percentage, main="Distribution of sex within plates",
-        xlab="plate", col=c("grey","white"), 
-        legend= c("F","M"),args.legend = list(x = "topleft"));
-
+barplot(Percentage, main = "Distribution of sex within plates",
+        xlab = "plate", col = c("grey","white"), 
+        legend = c("F","M"), args.legend = list(x = "topleft"));
+rm(counts, Percentage)
 pheno[,"Sex"]<-ifelse(pheno[,"Sex"]==2,0,1)
 #' 1 female, 0 male
 
 #'## Cleaning up the methylation data
 #' Filters a matrix of beta values by distance to SNP. Also removes crosshybridising probes and sex-chromosome probes.
-betas.clean<-rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
+dim(betas.rcp)
+betas.clean <- rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
 nCpG <- dim(betas.clean)[1]
 nCpG
 
@@ -126,7 +128,7 @@ abline(h = -log10(max(results1$results[results1$results[,5] < 0.05,3])), lty=1, 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
 data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-IlluminaAnnot = data.frame(
+IlluminaAnnot <- data.frame(
   chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
   pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
   Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
@@ -139,15 +141,15 @@ IlluminaAnnot = data.frame(
 
 #' Create CpG name and annotate row names
 rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
-IlluminaAnnot$Name <-rownames(IlluminaAnnot)
+IlluminaAnnot$Name <- rownames(IlluminaAnnot)
 dim(IlluminaAnnot)
 
-IlluminaAnnot = IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
+IlluminaAnnot <- IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
 dim(IlluminaAnnot)
 datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
                      Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
 #' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
-datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
+datamanhat$Chr <- as.numeric(sub("chr", "", datamanhat$Chr))
 
 #' Manhattan plot 
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
