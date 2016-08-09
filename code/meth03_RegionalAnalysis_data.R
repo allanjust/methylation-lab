@@ -38,7 +38,6 @@ head(dmrcoutput.sex$results)
 
 #' Let's extract the genomic ranges and annotate to the genome
 results.ranges <- extractRanges(dmrcoutput.sex, genome = "hg19")
-results.ranges[2]
 
 #' Plot the DMR using the Gviz
 
@@ -51,9 +50,20 @@ cols <- groups[as.character(pheno$sex)]
 #+ fig.width=9, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, phen.col=cols, genome="hg19")
 
-#'Let's look at the second region
-results.ranges[2]
-#+ fig.width=9, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.rcp, phen.col=cols, genome="hg19")
-#' End of script
+#'Most DMRs are located within sex-chromosomes
+#'Let's look at autosomal chromosomes only
+#'We now performed the regional analysis on the data without sex-chromosomes
+Mvals.clean <- log2(betas.clean)-log2(1-betas.clean)
+myannotation.clean <- cpg.annotate("array", Mvals.clean, analysis.type="differential",
+                                   design=model, coef=2)
+
+dmrcoutput.clean<- suppressMessages(dmrcate(myannotation.clean, lambda=1000, C=2))
+head(dmrcoutput.clean$results)
+#'There's a small bug on the extractRanges function that needs two rows for the $results output
+dmrcoutput.clean$results<-rbind(dmrcoutput.clean$results,test$results)
+results.ranges<- extractRanges(dmrcoutput.clean, genome = "hg19")
+results.ranges
+DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, genome="hg19")
+
+#' End of script 03
 #' 
