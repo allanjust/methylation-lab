@@ -118,39 +118,22 @@ onetwo[rownames(betas.rcp) %in% typeII] <- 2
 knitr::kable(t(table(onetwo)))
 
 #' Density plots by Infinium type: before and after RCP calibration
-#+ fig.width=14, fig.height=7, dpi=300
+#' Probe-type bias adjustment before and after RCP
+#' #+ fig.width=14, fig.height=7, dpi=300
 par(mfrow=c(1,2)) # Side-by-side density distributions 
-# Noob adjusted Beta density
-plot(density(getBeta(WB.noob)[,1][onetwo==1]), col="blue",ylim=c(0,6), 
-     main='Beta density',xlab=expression(beta~"-value")) # plot the first density
-for(i in 2:dim(getBeta(WB.noob))[2]){          # Add the lines to the existing plot
-  lines(density(getBeta(WB.noob)[,i][onetwo==1]), col="blue")        
-}
-for(i in 1:dim(getBeta(WB.noob))[2]){          # Add the lines to the existing plot
-  lines(density(getBeta(WB.noob)[,i][onetwo==2]), col="red")        
-}
+densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "red",main='Beta density')
+densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "blue")
+densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "red",main='Beta density probe-type adjusted')
+densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "blue")
 legend("topright", c("Infinium I","Infinium II"), 
        lty=c(1,1), title="Infinium type", 
-       bty='n', cex=0.8, col=c("blue","red"))
-
-#' RCP adjusted Beta Density
-plot(density(betas.rcp[,1][onetwo==1]), col="blue",ylim=c(0,6), 
-     main='Beta density probe-type adjusted',xlab=expression(beta~"-value")) # plot the first density
-for(i in 2:dim(betas.rcp)[2]){          # Add the lines to the existing plot
-  lines(density(betas.rcp[,i][onetwo==1]), col="blue")        
-}
-for(i in 1:dim(betas.rcp)[2]){          # Add the lines to the existing plot
-  lines(density(betas.rcp[,i][onetwo==2]), col="red")        
-}
-legend("topright", c("Infinium I","Infinium II"), 
-       lty=c(1,1), title="Infinium type", 
-       bty='n', cex=0.8, col=c("blue","red"))
-rm(i, onetwo, typeI, typeII)
+       bty='n',col=c("red","blue"))
+rm(onetwo, typeI, typeII)
 
 #' ## Batch effects
 #' Samples are processed in plates  
 #' this can create batch effects with different intensities by plate  
-#' Let's check if we have a plate effects in our data:
+#' Let's check if we have a plate effect in our data:
 knitr::kable(t(as.matrix(table(pData(WB.noob)$Plate_ID))), col.names = c("Plate 1","Plate2"))
 
 
