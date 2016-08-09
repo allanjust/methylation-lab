@@ -45,15 +45,15 @@ results.ranges[2]
 #' if you are interested in plotting genomic data the Gviz is extremely useful
 #'Let's look at the first region
 results.ranges[1]
-pheno$Sex<-ifelse(pheno$Sex==1,"Female","Male")
+pheno$sex<-ifelse(pheno$Sex==1,"Female","Male")
 groups <- c(Female="magenta", Male="forestgreen")
-cols <- groups[as.character(pheno$Sex)]
+cols <- groups[as.character(pheno$sex)]
 #+ fig.width=9, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, genome="hg19")
+DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, phen.col=cols, genome="hg19")
 
 #'Let's look at the second region
 results.ranges[2]
 #+ fig.width=9, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.clean, phen.col=cols, genome="hg19")
+DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.rcp, phen.col=cols, genome="hg19")
 #' End of script
 #' 

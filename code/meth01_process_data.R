@@ -119,7 +119,7 @@ knitr::kable(t(table(onetwo)))
 
 #' Density plots by Infinium type: before and after RCP calibration
 #' Probe-type bias adjustment before and after RCP
-#' #+ fig.width=14, fig.height=7, dpi=300
+#+ fig.width=15, fig.height=7, dpi=300
 par(mfrow=c(1,2)) # Side-by-side density distributions 
 densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "red",main='Beta density')
 densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "blue")
@@ -137,7 +137,7 @@ rm(onetwo, typeI, typeII)
 knitr::kable(t(as.matrix(table(pData(WB.noob)$Plate_ID))), col.names = c("Plate 1","Plate2"))
 
 
-#' ## Principal Component Analysis for the DNA methylation data
+#' ## Principal Component Analysis (PCA)
 #' Calculate major sources of variability of DNA methylation using PCA
 PCobject = prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 
