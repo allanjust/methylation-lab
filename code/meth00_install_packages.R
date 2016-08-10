@@ -8,7 +8,8 @@
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
-#' please consider updating your packages:
+#' Please consider updating your packages
+#' this step requires agreeing for each update (y for yes)
 update.packages()
 
 #'# Installation of new packages   

@@ -28,23 +28,25 @@ rm(Gbeta)
 
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
-#' 1 female, 2 male
+#' 1 female, 2 male  
 
 #' quick check of the distribution of gender between plates
 counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
 Percentage <- prop.table(counts, 2); 
+par(mfrow = c(1, 1))
 barplot(Percentage, main = "Distribution of sex within plates",
         xlab = "plate", col = c("grey","white"), 
         legend = c("F","M"), args.legend = list(x = "topleft"));
 rm(counts, Percentage)
-pheno[,"Sex"]<-ifelse(pheno[,"Sex"]==2,0,1)
+pheno[,"Sex"] <- ifelse(pheno[,"Sex"]==2,0,1)
 #' 1 female, 0 male
 
 #'## Cleaning up the methylation data
-#' Filters a matrix of beta values by distance to SNP. Also removes crosshybridising probes and sex-chromosome probes.
+#' Filters a matrix of beta values by distance to SNP. 
+#' Also removes cross-reactive probes and sex-chromosome probes.
 dim(betas.rcp)
-betas.clean <- rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
-nCpG <- dim(betas.clean)[1]
+betas.clean <- rmSNPandCH(betas.rcp,  dist = 2, mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
+nCpG <- nrow(betas.clean)
 nCpG
 
 #'# Running an Epigenome Wide Association
@@ -57,8 +59,7 @@ CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
 
-#' difference in methylation between different Sex
-#' some statistics
+#' difference in methylation between males and females for this CpG
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
       Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
       Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
@@ -67,21 +68,24 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)
       N=table(pheno[,"Sex"])))
 
 boxplot(CpG.level ~ pheno[,"Sex"])
-summary(lm(CpG.level~pheno[,"Sex"]))
 
-#'## EWAS and results 
+#'## EWAS and results using CpGassoc
 
 #' sex as predictor  
 #' note that CpGassoc is quite fast for running almost a half million regressions!
 system.time(results1 <- cpg.assoc(betas.clean,pheno[,"Sex"]))
 
+#' there are several components of the results
+class(results1)
+names(results1)
 #' look at a few results  
 #' here effect size is ~ mean difference in methylation proportion
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
 #' and the top hits
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
-#' check with previous result (running lm above)
+#' check with previous result on our selected CpG (running lm without CpGassoc)
 cbind(results1$coefficients[j,4:5], results1$results[j,c(1,3)])
+summary(lm(CpG.level~pheno[,"Sex"]))
 
 #' Bonferroni significant hits
 table(results1$results[,3] < 0.05/(nCpG))
@@ -101,11 +105,13 @@ head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3])[order(resu
 table(results2$results[,3] < 0.05/(nCpG))
 #' FDR significant hits
 table(results2$results[,5] < 0.05)
+#' we can also see them with:
+results2$FDR.sig
 
 #' qqplot and lambda interpretation  
 #+ fig.width=13, fig.height=7, dpi=300
 par(mfrow=c(1,1))
-#plot(results1, main="QQ plot for association between methylation and sex")
+plot(results1, main="QQ plot for association between methylation and sex")
 plot(results2, main="QQ plot for association between methylation and sex \n adjusted for cells proportion")
 
 #' Lambda - this is a summary of genomic inflation  
@@ -114,7 +120,7 @@ plot(results2, main="QQ plot for association between methylation and sex \n adju
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
 #' Lambda for the first EWAS
 lambda(results1$results[,3])
-#' Lambda after the cell type adjustment
+#' Lambda after cell type adjustment
 lambda(results2$results[,3])
 
 #' Volcano Plot-results2
@@ -132,12 +138,12 @@ IlluminaAnnot <- data.frame(
   chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
   pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
   Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
-  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
-  UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
-  probeA=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqA,
-  probeB=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqB,
-  Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
-  SourceSeq=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$SourceSeq)
+  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name)
+  # UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
+  # probeA=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqA,
+  # probeB=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqB,
+  # Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
+  # SourceSeq=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$SourceSeq)
 
 #' Create CpG name and annotate row names
 rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
@@ -146,6 +152,9 @@ dim(IlluminaAnnot)
 
 IlluminaAnnot <- IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
 dim(IlluminaAnnot)
+#' look up the hits from above
+IlluminaAnnot[IlluminaAnnot$Name %in% results2$FDR.sig$CPG.Labels,]
+#' combining annotation and results for plotting
 datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
                      Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
 #' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
@@ -154,5 +163,7 @@ datamanhat$Chr <- as.numeric(sub("chr", "", datamanhat$Chr))
 #' Manhattan plot 
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
 
+#' cleanup
+rm(j, nCpG, CpG.name, CpG.level, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)
 #' End of script 02
 #' 

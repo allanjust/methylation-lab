@@ -63,6 +63,7 @@ boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %")
 #' "Normal out of band background" (Noob) within-sample correction - see Triche et al 2013
 system.time(WB.noob <- preprocessNoob(WB))
 #' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)
+#' Minfi is incorrectly saying the data are still raw - we verify this is not true below
 WB.noob
 
 
@@ -84,12 +85,13 @@ lty=c(1,1), title="Normalization",
 bty='n', cex=0.8, col=c("magenta","blue"))
 
 #' ### probe failures due to low intensities
-#' We want to drop probes that were not significantly above background signal (from negative control probes)
+#' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
 detect.p <- detectionP(WB, type = "m+u")
-#' Proportion of failed probes per sample 
+#' Count of failed probes per sample 
 #' P>0.01 (i.e. not significant compared to background signal)
-knitr::kable(t(as.matrix(colMeans(detect.p > 0.01) * 100)), digits = 2)
-#' Number of failed probes
+knitr::kable(t(as.matrix(colSums(detect.p > 0.01))))
+#' This is less than 1% of probes per sample
+#' Total number of failed measures (in all probes)
 sum(detect.p > 0.01)
 #'Restrict data to good probes only
 detect.p[detect.p > 0.01] <- NA
@@ -97,9 +99,9 @@ detect.p <- na.omit(detect.p)
 intersect <- intersect(rownames(getAnnotation(WB)), rownames(detect.p))
 length(intersect)
 #' Filter bad probes from our methylset
-length(rownames(WB.noob))
+nrow(WB.noob)
 WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
-length(rownames(WB.noob))
+nrow(WB.noob)
 # cleanup
 rm(intersect, detect.p, WB)
 
@@ -133,7 +135,7 @@ rm(onetwo, typeI, typeII)
 #' ## Batch effects
 #' Samples are processed in plates  
 #' this can create batch effects with different intensities by plate  
-#' Let's check if we have a plate effect in our data:
+#' Let's check if samples were on different plates in these data:
 knitr::kable(t(as.matrix(table(pData(WB.noob)$Plate_ID))), col.names = c("Plate 1","Plate2"))
 
 
@@ -143,7 +145,7 @@ PCobject = prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 
 #' Extract the Principal Components from SVD
 PCs <- PCobject$x
-#' Proportion of variance explained by each PC
+#' Proportion of variance explained by each additional PC
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
@@ -156,16 +158,18 @@ t.test(PCs[,1]~pData(WB.noob)$Plate_ID)
 
 #' Removing batch effects using ComBat from the sva package
 suppressMessages(require(sva))
-# From Beta-values to M-values
+# First we convert from beta-values to M-values
 Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
+#' ComBat eBayes adjustment using a known variable of interest (here we use plate)
 Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Plate_ID)
-# From M-values back to Beta-values
+# Convert M-values back to beta-values
 betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 
 #' PCA after removing batch effects
 PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
+#' Proportion of variance explained by each additional PC
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
 #' The first PC is no longer associated with sample plate
 boxplot(PCs[,1] ~ pData(WB.noob)$Plate_ID,
