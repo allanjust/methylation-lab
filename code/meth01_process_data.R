@@ -5,6 +5,9 @@
 #' geometry: margin=2cm
 #' number_sections: true
 #' ---
+#+ setdir01, echo = F
+knitr::opts_knit$set(root.dir = "../")
+
 
 #'# Processing methylation data  
 #'
@@ -20,6 +23,7 @@ suppressMessages(library(minfi)) # popular package for methylation data
 library(FlowSorted.CordBlood.450k) # example dataset
 library(pryr) # for monitoring memory use
 library(ENmix) # probe type adjustment "rcp"
+suppressMessages(require(sva)) # for addressing batch effects
 
 #' bring a 450k dataset in to memory (from eponymous BioC package above)  
 #'   see Bakulski et al. Epigenetics 2016.
@@ -88,18 +92,18 @@ densityPlot(WB.noob, add = F, pal = "magenta")
 legend("topright", c("Noob","Raw"), 
   lty=c(1,1), title="Normalization", 
   bty='n', cex=0.8, col=c("magenta","blue"))
-#' notice the blue density traces (raw) are more spread out; background correction brings them together
+#' notice the blue density traces (raw) are more spread out; background correction brings them together  
  
-#' ### probe failures due to low intensities
+#' ## probe failures due to low intensities
 #' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
 detect.p <- detectionP(WB, type = "m+u")
 #' Count of failed probes per sample 
 #' P>0.01 (i.e. not significant compared to background signal)
 knitr::kable(t(as.matrix(colSums(detect.p > 0.01))))
-#' This is less than 1% of probes per sample
+#' This is less than 1% of probes per sample  
 #' Total number of failed measures (in all probes)
 sum(detect.p > 0.01)
-#'Restrict data to good probes only
+#'Restrict data to good probes only:
 detect.p[detect.p > 0.01] <- NA
 detect.p <- na.omit(detect.p)
 intersect <- intersect(rownames(getAnnotation(WB)), rownames(detect.p))
@@ -111,6 +115,7 @@ nrow(WB.noob)
 # cleanup
 rm(intersect, detect.p, WB)
 
+#' #Probe type adjustment  
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
 ## RCP with EnMix: Regression on Correlated Probes (Niu et al. Bioinformatics 2016)
 betas.rcp <- rcp(WB.noob)
@@ -123,10 +128,10 @@ typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
 typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
 onetwo <- rep(1, nrow(betas.rcp))
 onetwo[rownames(betas.rcp) %in% typeII] <- 2
-# almost three quarter of these probes are type II
+# almost three quarter of our probes are type II
 knitr::kable(t(table(onetwo)))
 
-#' Density plots by Infinium type: before and after RCP calibration
+#' Density plots by Infinium type: before and after RCP calibration  
 #' Probe-type bias adjustment before and after RCP
 #+ fig.width=15, fig.height=7, dpi=300
 par(mfrow=c(1,2)) # Side-by-side density distributions 
@@ -137,12 +142,14 @@ densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pa
 legend("topright", c("Infinium I","Infinium II"), 
        lty=c(1,1), title="Infinium type", 
        bty='n',col=c("red","blue"))
-#' notice that the type I and II peaks are more closely aligned after rcp adjustment (particularly in the higher peak)
+#' notice that the type I and II peaks are more closely aligned after rcp adjustment  
+#' (particularly in the higher peak)
 rm(onetwo, typeI, typeII)
 
 #' ## Batch effects
-#' Samples are processed in plates  
-#' this can create batch effects with different intensities by plate  
+#' As an example of an observable batch effect, samples are processed in plates (e.g. bisulfite converting 96 at a time).  
+#' This can create batch effects (technical variation) with different intensities by plate.  
+#' Other commonly observed batch effects include the position on the chip (e.g. the row effect).  
 #' Let's check if samples were on different plates in these data:
 knitr::kable(t(as.matrix(table(pData(WB.noob)$Plate_ID))), col.names = c("Plate 1","Plate2"))
 
@@ -164,8 +171,7 @@ boxplot(PCs[,1]~pData(WB.noob)$Plate_ID,
         col=c("red","blue"))
 t.test(PCs[,1]~pData(WB.noob)$Plate_ID)
 
-#' Removing batch effects using ComBat from the sva package
-suppressMessages(require(sva))
+#' ## Removing batch effects using ComBat from the sva package
 # First we convert from beta-values to M-values
 Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
 #' ComBat eBayes adjustment using a known variable of interest (here we use plate)
@@ -188,10 +194,11 @@ t.test(PCs[,1] ~ pData(WB.noob)$Plate_ID)
 #cleanup
 rm(PCs, Mvals, cummvar, PCobject)
 
-#' just checking how much memory we are using with pryr
-#mem_used()
-
-#' this command will check the maximum memory usage on Windows
+#' # memory usage
+#' as a reminder - these are large datasets and we are working in RAM.  
+#' Check memory usage with:
+pryr::mem_used()
+# this command will check the maximum memory usage on Windows
 memory.size(max = T)
 
 #' End of script 1

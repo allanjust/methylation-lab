@@ -1,10 +1,12 @@
 #'# Regional DNA methylation analysis using DMRcate  
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R & meth02_process_data.R 
+#+ setdir03, echo = F
+knitr::opts_knit$set(root.dir = "../")
 
 #'  we have already set up our analysis
 if(!exists("pheno")){
-  rmarkdown::render("meth02_analyze_data.R")
+  source("code/meth02_analyze_data.R")
 }
 
 #' Load package for regional analysis "DMRcate"

@@ -14,7 +14,7 @@ update.packages()
 
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
-methpackagesCRAN <- c("CpGassoc", "ggplot2", "matrixStats", "pryr", "data.table","qqman")
+methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "ggplot2", "matrixStats", "pryr", "data.table","qqman")
 methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "LOLA", "coMET", "ENmix",
                       "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "RPMM", "DMRcate")
 #' install these from CRAN:

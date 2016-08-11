@@ -1,11 +1,12 @@
 #'# Analyze methylation data  
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R  
-
+#+ setdir02, echo = F
+knitr::opts_knit$set(root.dir = "../")
 
 #' we have a processed dataset with 15 samples (otherwise we run script 01)
 if(!exists("WB.noob")){
-  rmarkdown::render("meth01_process_data.R")
+  rmarkdown::render("code/meth01_process_data.R")
 }
 dim(WB.noob)
 
@@ -18,9 +19,9 @@ suppressPackageStartupMessages({
   library(DMRcate)
 })
 
-#'## predict gender from methylation
+#'## predict sex from methylation
 Gbeta <- mapToGenome(WB.noob)  #map to the genome
-#' get sex predicts based on X and Y chromosome
+#' getSex predicts sex based on X and Y chromosome methylation intensity
 getSex(Gbeta) 
 #' we see that our predictions match the phenodata
 table(pData(WB.noob)$Sex,getSex(Gbeta)$predictedSex)
@@ -38,7 +39,7 @@ barplot(Percentage, main = "Distribution of sex within plates",
         xlab = "plate", col = c("grey","white"), 
         legend = c("F","M"), args.legend = list(x = "topleft"));
 rm(counts, Percentage)
-pheno[,"Sex"] <- ifelse(pheno[,"Sex"]==2,0,1)
+pheno[,"Sex"] <- ifelse(as.numeric(pheno[,"Sex"])==2,0,1)
 #' 1 female, 0 male
 
 #'## Cleaning up the methylation data
@@ -73,7 +74,7 @@ boxplot(CpG.level ~ pheno[,"Sex"])
 
 #' sex as predictor  
 #' note that CpGassoc is quite fast for running almost a half million regressions!
-system.time(results1 <- cpg.assoc(betas.clean,pheno[,"Sex"]))
+system.time(results1 <- cpg.assoc(betas.clean, pheno[,"Sex"]))
 
 #' there are several components of the results
 class(results1)
@@ -124,11 +125,10 @@ lambda(results1$results[,3])
 lambda(results2$results[,3])
 
 #' Volcano Plot-results2
+#' with Bonferroni threshold and current FDR
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
      xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
-#' Bonferroni threshold
 abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-#' FDR threshold
 abline(h = -log10(max(results1$results[results1$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
