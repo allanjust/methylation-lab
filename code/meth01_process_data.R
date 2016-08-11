@@ -166,6 +166,7 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
 
 #' Is the major source of variability associated with sample plate?
+par(mfrow=c(1,1))
 boxplot(PCs[,1]~pData(WB.noob)$Plate_ID,
         xlab = "Sample Plate",ylab="PC1",
         col=c("red","blue"))
