@@ -6,7 +6,7 @@ knitr::opts_knit$set(root.dir = "../")
 
 #' we have a processed dataset with 15 samples (otherwise we run script 01)
 if(!exists("WB.noob")){
-  rmarkdown::render("code/meth01_process_data.R")
+  source("code/meth01_process_data.R")
 }
 dim(WB.noob)
 
@@ -30,6 +30,8 @@ rm(Gbeta)
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
 #' 1 female, 2 male  
+# cleanup
+rm(WB.noob)
 
 #' quick check of the distribution of gender between plates
 counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
@@ -129,7 +131,9 @@ lambda(results2$results[,3])
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
      xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
 abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-abline(h = -log10(max(results1$results[results1$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
+abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
+# cleanup
+rm(results1)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
