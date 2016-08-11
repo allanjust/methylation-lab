@@ -35,3 +35,6 @@ vignettes/*.pdf
 
 # Knitr output
 *.html
+
+# OS X stuff
+.DS_Store

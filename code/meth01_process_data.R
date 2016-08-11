@@ -43,8 +43,13 @@ WB
 #'
 #' ## Estimate cell proportions
 #' Estimating proportions of 7 cell types found in cord blood (note the nucleated Red Blood Cells)
-cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
-  cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran", "nRBC"))
+#'  _This next command is commented out because it requires >4GB of RAM_ 
+#'  if you don't have that - you can load the presaved output below
+# cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
+#   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran", "nRBC"))
+# write.csv(cellprop, file = "data/cellprop_WB_15samps_bakulski2016.csv", row.names = F)
+#' read in the estimated cell proportions:
+cellprop <- read.csv("data/cellprop_WB_15samps_bakulski2016.csv")
 #' drop the reference dataset from memory
 rm(FlowSorted.CordBlood.450k)
 #' Here are the estimates
@@ -81,9 +86,10 @@ densityPlot(WB, main = "density plots before and after preprocessing", pal="blue
 densityPlot(WB.noob, add = F, pal = "magenta")
 # Add legend
 legend("topright", c("Noob","Raw"), 
-lty=c(1,1), title="Normalization", 
-bty='n', cex=0.8, col=c("magenta","blue"))
-
+  lty=c(1,1), title="Normalization", 
+  bty='n', cex=0.8, col=c("magenta","blue"))
+#' notice the blue density traces (raw) are more spread out; background correction brings them together
+ 
 #' ### probe failures due to low intensities
 #' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
 detect.p <- detectionP(WB, type = "m+u")
@@ -117,6 +123,7 @@ typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
 typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
 onetwo <- rep(1, nrow(betas.rcp))
 onetwo[rownames(betas.rcp) %in% typeII] <- 2
+# almost three quarter of these probes are type II
 knitr::kable(t(table(onetwo)))
 
 #' Density plots by Infinium type: before and after RCP calibration
@@ -130,6 +137,7 @@ densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pa
 legend("topright", c("Infinium I","Infinium II"), 
        lty=c(1,1), title="Infinium type", 
        bty='n',col=c("red","blue"))
+#' notice that the type I and II peaks are more closely aligned after rcp adjustment (particularly in the higher peak)
 rm(onetwo, typeI, typeII)
 
 #' ## Batch effects
@@ -180,7 +188,7 @@ t.test(PCs[,1] ~ pData(WB.noob)$Plate_ID)
 #cleanup
 rm(PCs, Mvals, cummvar, PCobject)
 
-#' just checking how much memory we are using
+#' just checking how much memory we are using with pryr
 #mem_used()
 
 #' this command will check the maximum memory usage on Windows
