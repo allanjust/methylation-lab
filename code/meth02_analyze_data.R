@@ -25,52 +25,72 @@ Gbeta <- mapToGenome(WB.noob)  #map to the genome
 getSex(Gbeta) 
 #' we see that our predictions match the phenodata
 table(pData(WB.noob)$Sex,getSex(Gbeta)$predictedSex)
+# cleanup
 rm(Gbeta)
 
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Sex=pData(WB.noob)$Sex, Plate_ID=pData(WB.noob)$Plate_ID, cellprop))
-#' 1 female, 2 male  
+pheno[,"Sex"] <- ifelse(as.numeric(pheno[,"Sex"])==2,0,1)
+# 1 female, 0 male
+
 # cleanup
 rm(WB.noob)
 
 #' quick check of the distribution of gender between plates
-counts <- table(pheno[,"Sex"], pheno[,"Plate_ID"])
-Percentage <- prop.table(counts, 2); 
-par(mfrow = c(1, 1))
-barplot(Percentage, main = "Distribution of sex within plates",
-        xlab = "plate", col = c("grey","white"), 
-        legend = c("F","M"), args.legend = list(x = "topleft"));
-rm(counts, Percentage)
-pheno[,"Sex"] <- ifelse(as.numeric(pheno[,"Sex"])==2,0,1)
-#' 1 female, 0 male
+table(pheno[,"Sex"], pheno[,"Plate_ID"])
 
-#'## Cleaning up the methylation data
-#' Filters a matrix of beta values by distance to SNP. 
-#' Also removes cross-reactive probes and sex-chromosome probes.
+## Cleaning up the methylation data
+#' Filters a matrix of beta values by distance to SNP. Also removes crosshybridising probes and sex-chromosome probes.
 dim(betas.rcp)
-betas.clean <- rmSNPandCH(betas.rcp,  dist = 2, mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
-nCpG <- nrow(betas.clean)
+betas.clean<-rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
+nCpG <- dim(betas.clean)[1]
 nCpG
 
 #'# Running an Epigenome Wide Association
 #' Here we run an EWAS on sex (as a predictor of methylation)
 
-#' first we can run a linear regression on a single cpg
+#' first we can run a linear regression on a single CpG
 j <- 133211
 
+#' lm on beta value
 CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
 
+#' difference in beta methylation values between different Sex
+#' some statistics
 #' difference in methylation between males and females for this CpG
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
-      Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
-      Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
-      Max=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],max)),3),
-      SD=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],sd)),3),
-      N=table(pheno[,"Sex"])))
+                   Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
+                   Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
+                   Max=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],max)),3),
+                   SD=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],sd)),3),
+                   N=table(pheno[,"Sex"])))
 
-boxplot(CpG.level ~ pheno[,"Sex"])
+boxplot(CpG.level ~ pheno[,"Sex"], main="Beta-values")
+summary(lm(CpG.level~pheno[,"Sex"]))
+
+#' lm on mvalues
+CpG.mlevel <-  log2(betas.clean[j,])-log2(1-betas.clean[j,])
+
+knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],min)),3),
+                   Mean=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],mean)),3), 
+                   Median=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],median)),3),
+                   Max=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],max)),3),
+                   SD=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],sd)),3),
+                   N=table(pheno[,"Sex"])))
+
+boxplot(CpG.mlevel ~ pheno[,"Sex"], main="M-values")
+summary(lm(CpG.mlevel~pheno[,"Sex"]))
+
+#' we can always extract measures of the relative quality of statistical models - R2 adjusted and AIC - and see which model perform better
+#' model on betas
+summary(lm(CpG.level~pheno[,"Sex"]))$adj.r.squared
+AIC((lm(CpG.level~pheno[,"Sex"])))
+
+#' model on mvalues
+summary(lm(CpG.mlevel~pheno[,"Sex"]))$adj.r.squared
+AIC((lm(CpG.mlevel~pheno[,"Sex"])))
 
 #'## EWAS and results using CpGassoc
 
@@ -83,6 +103,7 @@ class(results1)
 names(results1)
 #' look at a few results  
 #' here effect size is ~ mean difference in methylation proportion
+options(digits = 2)
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
 #' and the top hits
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
@@ -95,12 +116,12 @@ table(results1$results[,3] < 0.05/(nCpG))
 #' FDR significant hits
 table(results1$results[,5] < 0.05)
 
-
 #' EWAS with adjustment for cell types
+#' now we can run the linear regression on betas adjusting for cell proportions
 results2 <- cpg.assoc(betas.clean,pheno[,"Sex"], 
-                    covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  
-                      pheno[,"NK"]  + pheno[,"Bcell"] + 
-                      pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
+                      covariates=pheno[,"CD8T"]+ pheno[,"CD4T"] +  
+                        pheno[,"NK"]  + pheno[,"Bcell"] + 
+                        pheno[,"Mono"] + pheno[,"Gran"] + pheno[,"nRBC"])
 
 #' look at the results
 head(cbind(results2$coefficients[,4:5], P.value=results2$results[,3])[order(results2$results[,3]),])
@@ -111,7 +132,34 @@ table(results2$results[,5] < 0.05)
 #' we can also see them with:
 results2$FDR.sig
 
-#' qqplot and lambda interpretation  
+#' Bring annotation in for results
+data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+IlluminaAnnot = data.frame(
+  chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
+  pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
+  Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
+  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name,
+  UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group)
+
+## Create CpG name and annotate row names
+rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
+IlluminaAnnot$Name <- rownames(IlluminaAnnot)
+dim(IlluminaAnnot)
+# subset to the sites we are using
+IlluminaAnnot = IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
+dim(IlluminaAnnot)
+datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
+                         Mapinfo=IlluminaAnnot$pos, UCSC_RefGene_Name=IlluminaAnnot$UCSC_RefGene_Name, 
+                         Pval=results2$results[,3], Eff.Size = results2$coefficients[,4], Std.Error = results2$coefficients[,5])
+
+#' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
+datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
+
+#' see where the top hits are
+head(datamanhat[order(datamanhat$Pval), ])
+
+#' qqplot and lambda interpretation
+#' genomic inflation in EWAS  
 #+ fig.width=13, fig.height=7, dpi=300
 par(mfrow=c(1,1))
 plot(results1, main="QQ plot for association between methylation and sex")
@@ -129,45 +177,17 @@ lambda(results2$results[,3])
 #' Volcano Plot-results2
 #' with Bonferroni threshold and current FDR
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
-     xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot- adj for CellProp")
+     xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot \n adjusted for cells proportion")
+#Bonferroni threshold
 abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
+#FDR threshold
 abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
-# cleanup
-rm(results1)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
-data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-IlluminaAnnot <- data.frame(
-  chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
-  pos=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$pos,
-  Relation_to_Island=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Islands.UCSC$Relation_to_Island,
-  UCSC_RefGene_Name=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Name)
-  # UCSC_RefGene_Group=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$UCSC_RefGene_Group,
-  # probeA=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqA,
-  # probeB=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest$ProbeSeqB,
-  # Forward_Sequence=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$Forward_Sequence,
-  # SourceSeq=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Other$SourceSeq)
-
-#' Create CpG name and annotate row names
-rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
-IlluminaAnnot$Name <- rownames(IlluminaAnnot)
-dim(IlluminaAnnot)
-
-IlluminaAnnot <- IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
-dim(IlluminaAnnot)
-#' look up the hits from above
-IlluminaAnnot[IlluminaAnnot$Name %in% results2$FDR.sig$CPG.Labels,]
-#' combining annotation and results for plotting
-datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
-                     Mapinfo=IlluminaAnnot$pos,Pval=results2$results[,3])
-#' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
-datamanhat$Chr <- as.numeric(sub("chr", "", datamanhat$Chr))
-
-#' Manhattan plot 
-manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", main="Manhattan Plot - adj for CellProp")
+manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", suggestiveline = -log10(max(results2$results[results2$results[,5] < 0.05,3])), genomewideline = -log10(0.05/(nCpG)), main = "Manhattan Plot \n adjusted for cells proportion")
 
 #' cleanup
 rm(j, nCpG, CpG.name, CpG.level, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)
 #' End of script 02
-#' 
+#'  
