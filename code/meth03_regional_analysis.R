@@ -52,20 +52,14 @@ cols <- groups[as.character(pheno$sex)]
 #+ fig.width=9, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, phen.col=cols, genome="hg19")
 
-#'Most DMRs are located within sex-chromosomes
-#'Let's look at autosomal chromosomes only
-#'We now perform the regional analysis on the data without sex-chromosomes
-Mvals.clean <- log2(betas.clean)-log2(1-betas.clean)
-myannotation.clean <- cpg.annotate("array", Mvals.clean, analysis.type="differential",
-                                   design=model, coef=2)
+#'Extracting CpGs-names and locations
+chr <- gsub(":.*", "", dmrcoutput.sex$results$coord[1])
+start <- gsub("-.*", "", gsub(".*:", "", dmrcoutput.sex$results$coord[1]))
+end <- gsub(".*-", "", dmrcoutput.sex$results$coord[1])
+#'CpG ID and individual metrics
+cpgs <- dmrcoutput.sex$input[dmrcoutput.sex$input$CHR %in% chr & dmrcoutput.sex$input$pos >= start & dmrcoutput.sex$input$pos <=end,]
+knitr::kable(cpgs[1:5,])
 
-dmrcoutput.clean <- suppressMessages(dmrcate(myannotation.clean, lambda=1000, C=2))
-head(dmrcoutput.clean$results)
-#'There's a small bug on the extractRanges function that needs two rows for the $results output
-dmrcoutput.clean$results<-rbind(dmrcoutput.clean$results,dmrcoutput.clean$results)
-results.ranges <- extractRanges(dmrcoutput.clean, genome = "hg19")
-results.ranges
-DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, genome="hg19")
 
 #' End of script 03
 #' 
