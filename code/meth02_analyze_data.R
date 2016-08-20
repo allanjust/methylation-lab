@@ -17,6 +17,9 @@ suppressPackageStartupMessages({
   library(qqman)
   library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
   library(DMRcate)
+  library(MASS) 
+  library(sandwich) 
+  library(lmtest) 
 })
 
 #'## predict sex from methylation
@@ -42,7 +45,7 @@ table(pheno[,"Sex"], pheno[,"Plate_ID"])
 ## Cleaning up the methylation data
 #' Filters a matrix of beta values by distance to SNP. Also removes crosshybridising probes and sex-chromosome probes.
 dim(betas.rcp)
-betas.clean<-rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
+betas.clean <- rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
 nCpG <- dim(betas.clean)[1]
 nCpG
 
@@ -66,12 +69,17 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)
                    Max=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],max)),3),
                    SD=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],sd)),3),
                    N=table(pheno[,"Sex"])))
-
 boxplot(CpG.level ~ pheno[,"Sex"], main="Beta-values")
-summary(lm(CpG.level~pheno[,"Sex"]))
 
-#' lm on mvalues
-CpG.mlevel <-  log2(betas.clean[j,])-log2(1-betas.clean[j,])
+#' linear regression
+summary(lm(CpG.level~pheno[,"Sex"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
+
+#' robust linear regression
+CpG.rlm <- rlm(CpG.level~pheno[,"Sex"])
+coeftest(CpG.rlm, vcovHC(CpG.rlm, type="HC0"))[2, c("Estimate", "Pr(>|z|)","Std. Error")]
+coeftest(CpG.rlm)
+#' linear model on m-values
+CpG.mlevel <- log2(betas.clean[j,])-log2(1-betas.clean[j,])
 
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],min)),3),
                    Mean=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],mean)),3), 
@@ -81,7 +89,13 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],min
                    N=table(pheno[,"Sex"])))
 
 boxplot(CpG.mlevel ~ pheno[,"Sex"], main="M-values")
-summary(lm(CpG.mlevel~pheno[,"Sex"]))
+
+#' linear regression
+summary(lm(CpG.mlevel~pheno[,"Sex"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
+
+#' robust linear regression: an empirical Bayes method to moderate the standard errors of the estimated log-fold changes.
+lm.fit.rob.bayes <- eBayes(lmFit(object=CpG.mlevel, design=pheno[,"Sex"], method = "robust"))
+cbind(topTable(lm.fit.rob.bayes)[,c("logFC", "P.Value", "adj.P.Val")], s2.post = lm.fit.rob.bayes$s2.post)
 
 #' we can always extract measures of the relative quality of statistical models - R2 adjusted and AIC - and see which model perform better
 #' model on betas
@@ -103,7 +117,6 @@ class(results1)
 names(results1)
 #' look at a few results  
 #' here effect size is ~ mean difference in methylation proportion
-options(digits = 2)
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
 #' and the top hits
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
@@ -132,7 +145,7 @@ table(results2$results[,5] < 0.05)
 #' we can also see them with:
 results2$FDR.sig
 
-#' Bring annotation in for results
+#' results
 data(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 IlluminaAnnot = data.frame(
   chr=IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Locations$chr,
@@ -143,9 +156,9 @@ IlluminaAnnot = data.frame(
 
 ## Create CpG name and annotate row names
 rownames(IlluminaAnnot) <- rownames(IlluminaHumanMethylation450kanno.ilmn12.hg19@data$Manifest)
-IlluminaAnnot$Name <- rownames(IlluminaAnnot)
+IlluminaAnnot$Name <-rownames(IlluminaAnnot)
 dim(IlluminaAnnot)
-# subset to the sites we are using
+
 IlluminaAnnot = IlluminaAnnot [intersect(rownames(IlluminaAnnot), rownames(betas.clean)),]
 dim(IlluminaAnnot)
 datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
@@ -158,14 +171,14 @@ datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
 #' see where the top hits are
 head(datamanhat[order(datamanhat$Pval), ])
 
-#' qqplot and lambda interpretation
-#' genomic inflation in EWAS  
+#' ## Genomic inflation in EWAS
+#' qqplot and lambda interpretation  
 #+ fig.width=13, fig.height=7, dpi=300
 par(mfrow=c(1,1))
 plot(results1, main="QQ plot for association between methylation and sex")
-plot(results2, main="QQ plot for association between methylation and sex \n adjusted for cells proportion")
+plot(results2, main="QQ plot for association between methylation and sex \n adjusted for cell proportions")
 
-#' Lambda - this is a summary of genomic inflation  
+#' Lambda - this is a summary measure of genomic inflation  
 #' ratio of observed vs expected median p-value - is there early departure of the qqline?  
 #' estimated at -log10(0.5) ~ 0.3 on the x-axis of a qqplot  
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
@@ -188,6 +201,6 @@ abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, 
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", suggestiveline = -log10(max(results2$results[results2$results[,5] < 0.05,3])), genomewideline = -log10(0.05/(nCpG)), main = "Manhattan Plot \n adjusted for cells proportion")
 
 #' cleanup
-rm(j, nCpG, CpG.name, CpG.level, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)
+rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)
 #' End of script 02
 #'  
