@@ -87,11 +87,11 @@ print(getBeta(WB.noob)[1:3,1:3], digits = 2)
 #' Distribution of beta-values: before and after normalization
 #+ fig.width=8, fig.height=6, dpi=300
 densityPlot(WB, main = "density plots before and after preprocessing", pal="blue")
-densityPlot(WB.noob, add = F, pal = "magenta")
+densityPlot(WB.noob, add = F, pal = "red")
 # Add legend
 legend("topright", c("Noob","Raw"), 
   lty=c(1,1), title="Normalization", 
-  bty='n', cex=0.8, col=c("magenta","blue"))
+  bty='n', cex=0.8, col=c("red","blue"))
 #' notice the blue density traces (raw) are more spread out; background correction brings them together  
  
 #' ## probe failures due to low intensities
