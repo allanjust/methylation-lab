@@ -94,7 +94,8 @@ summary(lm(CpG.level~pheno[,"Sex"]))$adj.r.squared
 #' model on mvalues
 summary(lm(CpG.mlevel~pheno[,"Sex"]))$adj.r.squared
 
-#'## EWAS and results using CpGassoc, [Barfield et al. Bioinformatics 2012](http://www.ncbi.nlm.nih.gov/pubmed/22451269)  
+#'## EWAS and results using CpGassoc
+#'see [Barfield et al. Bioinformatics 2012](http://www.ncbi.nlm.nih.gov/pubmed/22451269)  
 
 #' sex as predictor  
 #' note that CpGassoc is quite fast for running almost a half million regressions!

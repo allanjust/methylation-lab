@@ -116,8 +116,8 @@ nrow(WB.noob)
 rm(intersect, detect.p, WB)
 
 #' #Probe type adjustment  
-#' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
-## RCP with EnMix: Regression on Correlated Probes [Niu et al. Bioinformatics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27153672)
+#' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes  
+#' RCP with EnMix: Regression on Correlated Probes [Niu et al. Bioinformatics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27153672)
 betas.rcp <- rcp(WB.noob)
 dim(betas.rcp)
 #' note that this package takes beta values out of the minfi object - result is a matrix
