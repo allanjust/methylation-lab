@@ -50,35 +50,29 @@ nCpG <- dim(betas.clean)[1]
 nCpG
 
 #'# Running an Epigenome Wide Association
-#' Here we run an EWAS on sex (as a predictor of methylation)
+#' Here we run an EWAS on sex (as a predictor of methylation)  
 
-#' first we can run a linear regression on a single CpG
+#' First we can run a linear regression on a single CpG that we have already picked
 j <- 133211
-
-#' lm on beta value
 CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
 
-#' difference in beta methylation values between different Sex
-#' some statistics
 #' difference in methylation between males and females for this CpG
+#' some descriptive statistics
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],min)),3),
                    Mean=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],mean)),3), 
                    Median=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],median)),3),
                    Max=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],max)),3),
                    SD=round(simplify2array(tapply(CpG.level, pheno[,"Sex"],sd)),3),
                    N=table(pheno[,"Sex"])))
+#' difference in beta methylation values between different Sex  
 boxplot(CpG.level ~ pheno[,"Sex"], main="Beta-values")
 
-#' linear regression
+#' linear regression on betas
 summary(lm(CpG.level~pheno[,"Sex"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
-#' robust linear regression
-CpG.rlm <- rlm(CpG.level~pheno[,"Sex"])
-coeftest(CpG.rlm, vcovHC(CpG.rlm, type="HC0"))[2, c("Estimate", "Pr(>|z|)","Std. Error")]
-coeftest(CpG.rlm)
-#' linear model on m-values
+#' comparison with m-values
 CpG.mlevel <- log2(betas.clean[j,])-log2(1-betas.clean[j,])
 
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],min)),3),
@@ -90,23 +84,17 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Sex"],min
 
 boxplot(CpG.mlevel ~ pheno[,"Sex"], main="M-values")
 
-#' linear regression
+#' linear regression on m-values
 summary(lm(CpG.mlevel~pheno[,"Sex"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
-#' robust linear regression: an empirical Bayes method to moderate the standard errors of the estimated log-fold changes.
-lm.fit.rob.bayes <- eBayes(lmFit(object=CpG.mlevel, design=pheno[,"Sex"], method = "robust"))
-cbind(topTable(lm.fit.rob.bayes)[,c("logFC", "P.Value", "adj.P.Val")], s2.post = lm.fit.rob.bayes$s2.post)
-
-#' we can always extract measures of the relative quality of statistical models - R2 adjusted and AIC - and see which model perform better
+#' we can always extract measures of the relative quality of statistical models - e.g. adjusted R2 - to look at model performance  
 #' model on betas
 summary(lm(CpG.level~pheno[,"Sex"]))$adj.r.squared
-AIC((lm(CpG.level~pheno[,"Sex"])))
 
 #' model on mvalues
 summary(lm(CpG.mlevel~pheno[,"Sex"]))$adj.r.squared
-AIC((lm(CpG.mlevel~pheno[,"Sex"])))
 
-#'## EWAS and results using CpGassoc
+#'## EWAS and results using CpGassoc, [Barfield et al. Bioinformatics 2012](http://www.ncbi.nlm.nih.gov/pubmed/22451269)  
 
 #' sex as predictor  
 #' note that CpGassoc is quite fast for running almost a half million regressions!
@@ -190,14 +178,17 @@ lambda(results2$results[,3])
 #' Volcano Plot-results2
 #' with Bonferroni threshold and current FDR
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
-     xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot \n adjusted for cells proportion")
+     xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot \n adjusted for cell proportions")
 #Bonferroni threshold & FDR threshold
 abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
 abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
-manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", suggestiveline = -log10(max(results2$results[results2$results[,5] < 0.05,3])), genomewideline = -log10(0.05/(nCpG)), main = "Manhattan Plot \n adjusted for cells proportion")
+manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", 
+          suggestiveline = -log10(max(results2$results[results2$results[,5] < 0.05,3])), 
+          genomewideline = -log10(0.05/(nCpG)), 
+          main = "Manhattan Plot \n adjusted for cell proportions")
 
 #' cleanup
 rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)

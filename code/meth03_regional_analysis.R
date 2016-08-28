@@ -10,7 +10,7 @@ if(!exists("pheno")){
 }
 
 #' Load package for regional analysis "DMRcate"
-#'  see Peters et al. Bioinformatics 2015. https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6
+#'  see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
 #' Other popular options for conducting Regional DNA methylation analysis in R are Aclust and bumphunter 
 suppressMessages(library(DMRcate)) # Popular package for regional DNA methylation analysis
 
@@ -46,7 +46,7 @@ results.ranges <- extractRanges(dmrcoutput.sex, genome = "hg19")
 #' if you are interested in plotting genomic data the Gviz is extremely useful
 #'Let's look at the first region
 results.ranges[1]
-pheno$sex<-ifelse(pheno$Sex==1,"Female","Male")
+pheno$sex <- ifelse(pheno$Sex==1, "Female", "Male")
 groups <- c(Female="magenta", Male="forestgreen")
 cols <- groups[as.character(pheno$sex)]
 #+ fig.width=9, fig.height=6, dpi=300

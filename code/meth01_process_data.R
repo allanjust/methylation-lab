@@ -17,7 +17,7 @@ knitr::opts_knit$set(root.dir = "../")
 
 #'
 #' Load packages that we will use focusing on *minfi*:  
-#'  see Aryee et al. Bioinformatics 2014. http://doi.org/10.1093/bioinformatics/btu049  
+#'  see [Aryee et al. Bioinformatics 2014](http://doi.org/10.1093/bioinformatics/btu049).  
 #' Other popular options for processing & analyzing methylation data include RnBeads and methylumi
 suppressMessages(library(minfi)) # popular package for methylation data
 library(FlowSorted.CordBlood.450k) # example dataset
@@ -26,7 +26,7 @@ library(ENmix) # probe type adjustment "rcp"
 suppressMessages(require(sva)) # for addressing batch effects
 
 #' bring a 450k dataset in to memory (from eponymous BioC package above)  
-#'   see Bakulski et al. Epigenetics 2016.
+#'   see [Bakulski et al. Epigenetics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27019159).
 data(FlowSorted.CordBlood.450k)
 
 #' because it is flow sorted - the authors give us the cell types  
@@ -46,8 +46,8 @@ WB
 
 #'
 #' ## Estimate cell proportions
-#' Estimating proportions of 7 cell types found in cord blood (note the nucleated Red Blood Cells)
-#'  _This next command is commented out because it requires >4GB of RAM_ 
+#' Estimating proportions of 7 cell types found in cord blood (note the nucleated Red Blood Cells)  
+#'  _This next command is commented out because it requires >4GB of RAM_  
 #'  if you don't have that - you can load the presaved output below
 # cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
 #   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran", "nRBC"))
@@ -69,15 +69,15 @@ boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %")
 #' Preprocess the data - this removes technical variation  
 #' There are several popular methods including intra- and inter-sample normalizations  
 #' Here we demonstrate an effective and lightweight approach:  
-#' "Normal out of band background" (Noob) within-sample correction - see Triche et al 2013
+#' "Normal out of band background" (Noob) within-sample correction - see [Triche et al 2013](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3627582/)
 system.time(WB.noob <- preprocessNoob(WB))
-#' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)
+#' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)  
 #' Minfi is incorrectly saying the data are still raw - we verify this is not true below
 WB.noob
 
 
 #' we can look at a few methylation values on the fly
-#' and see that the preprocessing changed them
+#' and see that the preprocessing changed them:
 # first three CpGs on the first three samples
 # raw RGset
 print(getBeta(WB)[1:3,1:3], digits = 2)
@@ -117,7 +117,7 @@ rm(intersect, detect.p, WB)
 
 #' #Probe type adjustment  
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes
-## RCP with EnMix: Regression on Correlated Probes (Niu et al. Bioinformatics 2016)
+## RCP with EnMix: Regression on Correlated Probes [Niu et al. Bioinformatics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27153672)
 betas.rcp <- rcp(WB.noob)
 dim(betas.rcp)
 #' note that this package takes beta values out of the minfi object - result is a matrix
@@ -166,11 +166,11 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
 
 #' Is the major source of variability associated with sample plate?
-par(mfrow=c(1,1))
-boxplot(PCs[,1]~pData(WB.noob)$Plate_ID,
-        xlab = "Sample Plate",ylab="PC1",
-        col=c("red","blue"))
-t.test(PCs[,1]~pData(WB.noob)$Plate_ID)
+par(mfrow = c(1, 1))
+boxplot(PCs[, 1] ~ pData(WB.noob)$Plate_ID,
+        xlab = "Sample Plate", ylab = "PC1",
+        col = c("red", "blue"))
+t.test(PCs[, 1] ~ pData(WB.noob)$Plate_ID)
 
 #' ## Removing batch effects using ComBat from the sva package
 # First we convert from beta-values to M-values
@@ -183,9 +183,6 @@ betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 #' PCA after removing batch effects
 PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
-cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
-#' Proportion of variance explained by each additional PC
-knitr::kable(t(as.matrix(cummvar)),digits = 2)
 #' The first PC is no longer associated with sample plate
 boxplot(PCs[,1] ~ pData(WB.noob)$Plate_ID,
         xlab = "Sample Plate", ylab = "PC1",
