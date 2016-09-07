@@ -181,8 +181,8 @@ lambda(results2$results[,3])
 plot(results2$coefficients[,4],-log10(results2$results[,3]), 
      xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot \n adjusted for cell proportions")
 #Bonferroni threshold & FDR threshold
-abline(h = -log10(0.05/(nCpG)), lty=1, col="red", lwd=2)
-abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="blue", lwd=2)
+abline(h = -log10(0.05/(nCpG)), lty=1, col="#FDE725FF", lwd=2)
+abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="#440154FF", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues

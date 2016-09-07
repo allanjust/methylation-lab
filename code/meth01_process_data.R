@@ -22,6 +22,7 @@ knitr::opts_knit$set(root.dir = "../")
 suppressMessages(library(minfi)) # popular package for methylation data
 library(FlowSorted.CordBlood.450k) # example dataset
 library(pryr) # for monitoring memory use
+suppressMessages(library(matrixStats)) # for calculating summary statistics
 library(ENmix) # probe type adjustment "rcp"
 suppressMessages(require(sva)) # for addressing batch effects
 
@@ -83,18 +84,28 @@ WB.noob
 print(getBeta(WB)[1:3,1:3], digits = 2)
 # after preprocessing
 print(getBeta(WB.noob)[1:3,1:3], digits = 2)
+#' and we can check that
+#' the dimensions of the beta matrices are unchanged
+identical(dim(getBeta(WB)), dim(getBeta(WB.noob)))
 
 #' Distribution of beta-values: before and after normalization
 #+ fig.width=8, fig.height=6, dpi=300
-densityPlot(WB, main = "density plots before and after preprocessing", pal="blue")
-densityPlot(WB.noob, add = F, pal = "red")
+densityPlot(WB, main = "density plots before and after preprocessing", pal="#440154FF")
+densityPlot(WB.noob, add = F, pal = "#FDE725FF")
 # Add legend
 legend("topright", c("Noob","Raw"), 
   lty=c(1,1), title="Normalization", 
-  bty='n', cex=0.8, col=c("red","blue"))
+  bty='n', cex=0.8, col=c("#FDE725FF","#440154FF"))
 #' notice the blue density traces (raw) are more spread out; background correction brings them together  
- 
-#' ## probe failures due to low intensities
+
+#' the use of a density plot may give the impression of values outside (0,1)  
+#' but let's check:
+print(colRanges(getBeta(WB), na.rm = T), digits = 2)
+print(colRanges(getBeta(WB.noob)), digits = 2)
+#' we confirm that plot tails were an artifact of applying a continuous distribution  
+#'  (in estimating the density function)
+
+#' ## probe failures due to low intensities  
 #' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
 detect.p <- detectionP(WB, type = "m+u")
 #' Count of failed probes per sample 
@@ -135,13 +146,13 @@ knitr::kable(t(table(onetwo)))
 #' Probe-type bias adjustment before and after RCP
 #+ fig.width=15, fig.height=7, dpi=300
 par(mfrow=c(1,2)) # Side-by-side density distributions 
-densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "red",main='Beta density')
-densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "blue")
-densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "red",main='Beta density probe-type adjusted')
-densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "blue")
+densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "#FDE725FF",main='Beta density')
+densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "#440154FF")
+densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "#FDE725FF",main='Beta density probe-type adjusted')
+densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "#440154FF")
 legend("topright", c("Infinium I","Infinium II"), 
        lty=c(1,1), title="Infinium type", 
-       bty='n',col=c("red","blue"))
+       bty='n',col=c("#FDE725FF","#440154FF"))
 #' notice that the type I and II peaks are more closely aligned after rcp adjustment  
 #' (particularly in the higher peak)
 rm(onetwo, typeI, typeII)
@@ -169,7 +180,7 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 par(mfrow = c(1, 1))
 boxplot(PCs[, 1] ~ pData(WB.noob)$Plate_ID,
         xlab = "Sample Plate", ylab = "PC1",
-        col = c("red", "blue"))
+        col = c("#FDE725FF", "#440154FF"))
 t.test(PCs[, 1] ~ pData(WB.noob)$Plate_ID)
 
 #' ## Removing batch effects using ComBat from the sva package
@@ -186,7 +197,7 @@ PCs <- PCobject$x
 #' The first PC is no longer associated with sample plate
 boxplot(PCs[,1] ~ pData(WB.noob)$Plate_ID,
         xlab = "Sample Plate", ylab = "PC1",
-        col = c("red","blue"))
+        col = c("#FDE725FF","#440154FF"))
 t.test(PCs[,1] ~ pData(WB.noob)$Plate_ID)
 #' ComBat removed the apparent batch effect
 #cleanup

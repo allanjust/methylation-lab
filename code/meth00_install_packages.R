@@ -17,7 +17,8 @@ update.packages()
 methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats", 
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest")
 methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "ENmix",
-                      "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", "DMRcate")
+                      "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", 
+                      "IlluminaHumanMethylation450kmanifest", "DMRcate")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
