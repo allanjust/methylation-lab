@@ -4,7 +4,7 @@
 #'   
 
 #'## It is important that you have already updated R
-#'you should be running version 3.3.1
+#'you should be running version 3.4.0
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
@@ -14,11 +14,11 @@ update.packages()
 
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
-methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats", 
+methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape", 
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest")
-methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "ENmix",
-                      "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", 
-                      "IlluminaHumanMethylation450kmanifest", "DMRcate")
+methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix",
+                      "sva", "IlluminaHumanMethylationEPICanno.ilmn12.hg19", 
+                      "DMRcate", "shinyMethyl")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
@@ -37,7 +37,7 @@ if(length(toinstallBioC >= 1)) {
 if(!all(c(toinstallBioC, toinstallCRAN) %in% installed.packages()[,1])) stop(
   "required packages not installed - please retry script carefully making sure you have already updated R and work through any error messages")
 
-if(!as.numeric(sub("\\.[0-9]$", "", installed.packages()["minfi","Version"])) >= 1.18) stop(
+if(!as.numeric(sub("\\.[0-9]$", "", installed.packages()["minfi","Version"])) >= 1.22) stop(
   "you don't have the minfi version needed for this workshop")
 
 #' Session Information
