@@ -1,7 +1,7 @@
 #' ---
 #' title: "Processing, analyzing, and interpreting epigenome-wide DNA methylation data"
-#' author: "Andrea Baccarelli, Andres Cardena, Elena Colicino, Allan Just"
-#' date: "September, 2016"
+#' author: "Andrea Baccarelli, Andres Cardena, Elena Colicino, Cavin Ward-Caviness, Allan Just"
+#' date: "June, 2017"
 #' geometry: margin=2cm
 #' number_sections: true
 #' ---
@@ -10,53 +10,50 @@ knitr::opts_knit$set(root.dir = "../")
 
 
 #'# Processing methylation data  
-#'
-#' Here we will use an existing methylation dataset - 450k in cord blood (15 samples)  
-#' To read in your own dataset (usually "idat files" ending in .idat)  
-#' See the help for ?read.metharray.exp  
 
-#'
 #' Load packages that we will use focusing on *minfi*:  
 #'  see [Aryee et al. Bioinformatics 2014](http://doi.org/10.1093/bioinformatics/btu049).  
 #' Other popular options for processing & analyzing methylation data include RnBeads and methylumi
 suppressMessages(library(minfi)) # popular package for methylation data
-library(FlowSorted.CordBlood.450k) # example dataset
+library(shinyMethyl) # for visualizing quality control
 library(pryr) # for monitoring memory use
 suppressMessages(library(matrixStats)) # for calculating summary statistics
 library(ENmix) # probe type adjustment "rcp"
 suppressMessages(require(sva)) # for addressing batch effects
+#' Here we will use an existing methylation dataset - EPIC in peripheral blood (20 samples)  
+#' To read in your own dataset (usually "idat files" ending in .idat)  
+#' See the help for ?read.metharray.exp  
+library(EPICdemo) # example dataset - not a publically available package
 
-#' bring a 450k dataset in to memory (from eponymous BioC package above)  
-#'   see [Bakulski et al. Epigenetics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27019159).
-data(FlowSorted.CordBlood.450k)
-
-#' because it is flow sorted - the authors give us the cell types  
-#' here we show the frequencies:
-table(pData(FlowSorted.CordBlood.450k)$CellType)
-
-# subset to just the Whole Blood samples since this is the most common for epi studies
-WB <- FlowSorted.CordBlood.450k[, pData(FlowSorted.CordBlood.450k)$CellType == "WholeBlood"]
+#' import EPIC data from a sample sheet and idat files
+sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
+WB <- read.metharray.exp(targets = sheet)
 ncol(WB)
-#' we need to change the sampleName attribute here just because we are using a reference and
-#' these samples are otherwise in the reference dataset when we want to estimate their composition.
-# your personal samples won't need to be renamed
-sampleNames(WB) <- 1:15
+
 #' Look at the attributes of this dataset  
 #' It is stored as a RGChannelSet which means it is not yet processed (red and green signals stored separately)
 WB
 
-#'
+#' Prepare a summary of the dataset to look at interactively
+summaryqc <- shinySummarize(WB)
+#' Visualize qc with shinyMethyl
+runShinyMethyl(summaryqc)
+#' cleanup
+rm(sheet, covariates, colorSet, current.control.type, current.density.type, current.probe.type, 
+   first_time, genderCutoff, mouse.click.indices, sampleColors, summaryqc)
+
+#' Look at some of the phenotype data:
+pData(WB)[,1:7]
+
 #' ## Estimate cell proportions
-#' Estimating proportions of 7 cell types found in cord blood (note the nucleated Red Blood Cells)  
+#' Estimating proportions of 6 cell types found in peripheral blood 
 #'  _This next command is commented out because it requires >4GB of RAM_  
 #'  if you don't have that - you can load the presaved output below
-# cellprop <- estimateCellCounts(WB, compositeCellType = "CordBlood",
-#   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran", "nRBC"))
-# write.csv(cellprop, file = "data/cellprop_WB_15samps_bakulski2016.csv", row.names = F)
+# cellprop <- estimateCellCounts(WB, compositeCellType = "Blood",
+#   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran"))
+# write.csv(cellprop, file = "data/cellprop_WB_20samps_EPICdemo.csv", row.names = F)
 #' read in the estimated cell proportions:
-cellprop <- read.csv("data/cellprop_WB_15samps_bakulski2016.csv")
-#' drop the reference dataset from memory
-rm(FlowSorted.CordBlood.450k)
+cellprop <- read.csv("data/cellprop_WB_20samps_EPICdemo.csv")
 #' Here are the estimates
 #+ cellprop, results = "asis"
 knitr::kable(cellprop, digits = 2)
@@ -73,7 +70,6 @@ boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %")
 #' "Normal out of band background" (Noob) within-sample correction - see [Triche et al 2013](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3627582/)
 system.time(WB.noob <- preprocessNoob(WB))
 #' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)  
-#' Minfi is incorrectly saying the data are still raw - we verify this is not true below
 WB.noob
 
 
@@ -139,7 +135,7 @@ typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
 typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
 onetwo <- rep(1, nrow(betas.rcp))
 onetwo[rownames(betas.rcp) %in% typeII] <- 2
-# almost three quarter of our probes are type II
+# almost 84% of our probes are type II
 knitr::kable(t(table(onetwo)))
 
 #' Density plots by Infinium type: before and after RCP calibration  
@@ -158,12 +154,13 @@ legend("topright", c("Infinium I","Infinium II"),
 rm(onetwo, typeI, typeII)
 
 #' ## Batch effects
-#' As an example of an observable batch effect, samples are processed in plates (e.g. bisulfite converting 96 at a time).  
-#' This can create batch effects (technical variation) with different intensities by plate.  
-#' Other commonly observed batch effects include the position on the chip (e.g. the row effect).  
-#' Let's check if samples were on different plates in these data:
-knitr::kable(t(as.matrix(table(pData(WB.noob)$Plate_ID))), col.names = c("Plate 1","Plate2"))
-
+#' As an example of an observable batch effect, samples are processed in plates (e.g. bisulfite converting 96 at a time),  
+#' and then in chips (EPIC array has 8 rows and 1 column).  
+#' This can create batch effects (technical variation) with different intensities by position (row effect).  
+#' Other commonly observed batch effects include bisulfite processing plate, chip, and processing date.
+#' Let's check if samples varied across rows in these data (even in different chips):
+knitr::kable(t(as.matrix(table(pData(WB.noob)$Array))), 
+             col.names = paste0("Row ", 1:8))
 
 #' ## Principal Component Analysis (PCA)
 #' Calculate major sources of variability of DNA methylation using PCA
@@ -175,19 +172,17 @@ PCs <- PCobject$x
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
-
-#' Is the major source of variability associated with sample plate?
+#' Is the major source of variability associated with position on chip?
 par(mfrow = c(1, 1))
-boxplot(PCs[, 1] ~ pData(WB.noob)$Plate_ID,
-        xlab = "Sample Plate", ylab = "PC1",
-        col = c("#FDE725FF", "#440154FF"))
-t.test(PCs[, 1] ~ pData(WB.noob)$Plate_ID)
+boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
+        xlab = "Sample Plate", ylab = "PC1")
+summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 
 #' ## Removing batch effects using ComBat from the sva package
 # First we convert from beta-values to M-values
 Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
-#' ComBat eBayes adjustment using a known variable of interest (here we use plate)
-Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Plate_ID)
+#' ComBat eBayes adjustment using a known variable of interest (here we use row)
+Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Array)
 # Convert M-values back to beta-values
 betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 
@@ -195,10 +190,9 @@ betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
 #' The first PC is no longer associated with sample plate
-boxplot(PCs[,1] ~ pData(WB.noob)$Plate_ID,
-        xlab = "Sample Plate", ylab = "PC1",
-        col = c("#FDE725FF","#440154FF"))
-t.test(PCs[,1] ~ pData(WB.noob)$Plate_ID)
+boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
+        xlab = "Sample Plate", ylab = "PC1")
+summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 #' ComBat removed the apparent batch effect
 #cleanup
 rm(PCs, Mvals, cummvar, PCobject)

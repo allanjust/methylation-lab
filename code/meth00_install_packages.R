@@ -4,7 +4,7 @@
 #'   
 
 #'## It is important that you have already updated R
-#'you should be running version 3.3.1
+#'you should be running version 3.3.3
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
@@ -16,9 +16,9 @@ update.packages()
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats", 
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest")
-methpackagesBioC <- c("minfi", "FlowSorted.CordBlood.450k", "missMethyl", "ENmix",
+methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix",
                       "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", 
-                      "IlluminaHumanMethylation450kmanifest", "DMRcate")
+                      "IlluminaHumanMethylation450kmanifest", "DMRcate", "shinyMethyl")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
