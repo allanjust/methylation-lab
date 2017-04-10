@@ -1,6 +1,6 @@
 ## Comparison of overlap of 450k and 850k features
 ## enrichment analyses for previous CHARGE EWAS
-## enrichment analyses for smoking GWAS (NHGRI)
+## enrichment analyses for smoking GWAS (NHGRI-EBI GWAS Catalog 4/10/2017)
 ## enrichment analyses for genomic feature
 
 suppressPackageStartupMessages({
@@ -23,8 +23,10 @@ suppressPackageStartupMessages({
 })
 
 ### read in necessary data
+## smoking data from "Epigenetic Signatures of Cigarette Smoking" (https://doi.org/10.1161/CIRCGENETICS.116.001506 )
 chrg_curr_nvr <- read.table(file="M:/Epigenetics Boot Camp/BootCampDemo/smk_curr_vs_never.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, fill=TRUE)
 chrg_fmr_nvr <- read.table(file="M:/Epigenetics Boot Camp/BootCampDemo/smk_former_vs_never.csv", header=TRUE, sep=",", stringsAsFactors=FALSE, fill=TRUE)
+## GWAS data downloaded from the NHGRI-EBI GWAS Catalog on 4/10/2017
 smk_gwas_loc <- "M:/Epigenetics Boot CAmp/BootCampDemo/gwas-association-downloaded_2017-04-10-smoking.tsv"
 
 ### assumes that the model is named "unadj.out" and is the ouput of a model from CpGassoc
