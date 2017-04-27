@@ -33,13 +33,17 @@ smk_gwas_loc <- "M:/Epigenetics Boot CAmp/BootCampDemo/gwas-association-download
 ### MethylSetEx.noob is the MethylSet for the data created after noob background correction
 ### noob.rcp is the matrix of betas used in the analysis, has the CpGs that were retained for the analysis
 
+### get annotation
+annot <- getAnnotation(MethylSetEx.noob)
+annot$Methyl450_Loci[annot$Methyl450_Loci==TRUE] <- "450K"
+annot$Methyl450_Loci[annot$Methyl450_Loci!="450K"] <- "EPIC only"
+
 ### merge with annotation and label which are 450k loci and which are EPIC specific
-unadj.out <- merge(unadj.out, getAnnotation(MethylSetEx.noob), by.x="CPG.Labels", by.y="Name")
-unadj.out$Methyl450_Loci[unadj.out$Methyl450_Loci==TRUE] <- "450K"
-unadj.out$Methyl450_Loci[unadj.out$Methyl450_Loci!="450K"] <- "EPIC only"
+unadj.out <- merge(unadj.out, annot, by.x="CPG.Labels", by.y="Name")
 
 ### limit to just the "suggetive" loci - here P < 0.0005 just as an example
 unadj.sug <- subset(unadj.out, P.value < 0.0005)
+
 
 ### perform GO pathway enrichment while controlling for the number of CpGs per gene
 unadj.gst <- gometh(sig.cpg=unadj.sug$CPG.Labels, all.cpg=rownames(noob.rcp), collection="GO", array.type="EPIC", plot.bias=TRUE)
@@ -52,8 +56,29 @@ topGO(unadj.gst.bias)
 genome.locs <- table(unadj.out$Methyl450_Loci, unadj.out$Relation_to_Island)
 round(genome.locs/rowSums(genome.locs)*100,1)
 
-### check enrichment of suggestive CpGs for genomic features
-met_annot <- prep_annotation(getAnnotation(MethylSetEx.noob))
+### enhancer enrichment
+annot$X450k_Enhancer[annot$X450k_Enhancer==""]<-NA
+annot$P5_YesNo <- ifelse(annot$Phantom5_Enhancers=="",NA,TRUE)
+
+with(annot, table(P5_YesNo, useNA = "ifany"))
+with(annot, table(X450k_Enhancer, useNA = "ifany"))
+
+with(annot, print(prop.table(table(
+  P5_YesNo, useNA = "ifany")), digits = 2))
+
+### add column for hits
+annot$SMK_Sug <- ifelse(annot$Name%in%unadj.sug$CPG.Labels, TRUE, FALSE)
+### make 2x2 table
+P5.enhancer_tbl <- with(annot, table(SMK_Sug, !is.na(P5_YesNo), useNA = "ifany"))
+addmargins(P5.enhancer_tbl)
+### print proportion of hits
+print(prop.table(P5.enhancer_tbl, 1), digits = 2)
+
+### two sided p-value test for enrichment and depletion
+doublemidp.test(P5.enhancer_tbl)
+
+### one sided test for enrichment and depletion (separately) enrichment of suggestive CpGs for genomic features
+met_annot <- prep_annotation(annot)
 cpgfeature_enrichment <- cpg_enrichment(unadj.sug$CPG.Labels, met_annot)
 
 ### compare to CHARGE former vs never smoking EWAS

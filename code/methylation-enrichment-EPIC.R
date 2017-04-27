@@ -250,3 +250,33 @@ cpg_gwas_enrichment <- function(cpg_list, met_annot, gwascat, traits=NULL) {
 	
 	return(gwas_enrichment_tbl);
 }
+
+# two sided doubling mid p-value for enrichment/depletion test
+# as described in: http://bioinformatics.oxfordjournals.org/content/23/4/401.full
+# function takes a table of hits (rows), by annotation variable (col) 
+# Taken from code written by Allan Just
+doublemidp.test <- function(hits2x2){
+  if(class(hits2x2) != "table" | !all(dim(hits2x2) == c(2, 2))){
+    stop("this test expects a 2x2 table")
+  }
+  # we double for the two-sided test
+  2*min(
+    # mid-p-val for enrichment
+    phyper(hits2x2[2, 2],
+           sum(hits2x2[, 2]),
+           sum(hits2x2[, 1]),
+           sum(hits2x2[2, ]), lower.tail = FALSE) +
+      dhyper(hits2x2[2, 2],
+             sum(hits2x2[, 2]),
+             sum(hits2x2[, 1]),
+             sum(hits2x2[2, ])) * 0.5,
+    # consider depletion (reversing cols of 2x2)
+    phyper(hits2x2[2, 1],
+           sum(hits2x2[, 1]),
+           sum(hits2x2[, 2]),
+           sum(hits2x2[2, ]), lower.tail = FALSE) +
+      dhyper(hits2x2[2, 1],
+             sum(hits2x2[, 1]),
+             sum(hits2x2[, 2]),
+             sum(hits2x2[2, ])) * 0.5)
+}
