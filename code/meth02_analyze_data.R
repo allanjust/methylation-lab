@@ -11,7 +11,7 @@ if(!exists("WB.noob")){
 dim(WB.noob)
 
 #' load packages
-# To Fix lirary IlluminaHumanMethylation450kanno.ilmn12.hg19 (Elena)
+# To Fix lirary IlluminaHumanMethylation450kanno.ilmn12.hg19
 suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
