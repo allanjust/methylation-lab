@@ -4,7 +4,11 @@
 #'   
 
 #'## It is important that you have already updated R
+<<<<<<< HEAD
 #'you should be running version 3.4.0
+=======
+#'you should be running version 3.3.3
+>>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
@@ -17,8 +21,13 @@ update.packages()
 methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape", 
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest")
 methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix",
+<<<<<<< HEAD
                       "sva", "IlluminaHumanMethylationEPICanno.ilmn12.hg19", 
                       "DMRcate", "shinyMethyl")
+=======
+                      "sva", "IlluminaHumanMethylation450kanno.ilmn12.hg19", 
+                      "IlluminaHumanMethylation450kmanifest", "DMRcate", "shinyMethyl")
+>>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
