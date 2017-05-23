@@ -39,17 +39,10 @@ WB
 #' Prepare a summary of the dataset to look at interactively
 summaryqc <- shinySummarize(WB)
 #' Visualize qc with shinyMethyl
-<<<<<<< HEAD
 #runShinyMethyl(summaryqc)
 #' cleanup
 #rm(sheet, covariates, colorSet, current.control.type, current.density.type, current.probe.type, 
 #   first_time, genderCutoff, mouse.click.indices, sampleColors, summaryqc)
-=======
-runShinyMethyl(summaryqc)
-#' cleanup
-rm(sheet, covariates, colorSet, current.control.type, current.density.type, current.probe.type, 
-   first_time, genderCutoff, mouse.click.indices, sampleColors, summaryqc)
->>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 
 #' Look at some of the phenotype data:
 pData(WB)[,1:7]
@@ -105,8 +98,8 @@ densityPlot(WB, main = "density plots before and after preprocessing", pal="#440
 densityPlot(WB.noob, add = F, pal = "#FDE725FF")
 # Add legend
 legend("topleft", c("Noob","Raw"), 
-  lty=c(1,1), title="Normalization", 
-  bty='n', cex=1.3, col=c("#FDE725FF","#440154FF"))
+       lty=c(1,1), title="Normalization", 
+       bty='n', cex=1.3, col=c("#FDE725FF","#440154FF"))
 #' notice the blue density traces (raw) are more spread out; background correction brings them together  
 
 #' the use of a density plot may give the impression of values outside (0,1)  
@@ -197,22 +190,14 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 #' Is the major source of variability associated with position on chip?
 par(mfrow = c(1, 1))
 boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-<<<<<<< HEAD
         ylab = "PC1",las=2, main="Position on chip")
-=======
-        xlab = "Sample Plate", ylab = "PC1")
->>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 
 #' ## Removing batch effects using ComBat from the sva package
 # First we convert from beta-values to M-values
 Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
 #' ComBat eBayes adjustment using a known variable of interest (here we use row)
-<<<<<<< HEAD
 Mvals.ComBat <- ComBat.mc(Mvals, batch = pData(WB.noob)$Array,nCores = detectCores()-1)
-=======
-Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Array)
->>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 # Convert M-values back to beta-values
 betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 
@@ -221,11 +206,7 @@ PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
 #' The first PC is no longer associated with sample plate
 boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-<<<<<<< HEAD
         ylab = "PC1",las=2, main="Position on chip")
-=======
-        xlab = "Sample Plate", ylab = "PC1")
->>>>>>> 6566d2a22b19257e6ee487da5f793a62b712eaaa
 summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 #' ComBat removed the apparent batch effect
 #cleanup
