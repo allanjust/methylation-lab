@@ -16,49 +16,60 @@ suppressMessages(library(DMRcate)) # Popular package for regional DNA methylatio
 
 
 #' First we need to define a model
-model <- model.matrix(~as.factor(pheno$Sex)+
-                     as.numeric(pheno$CD8T)+
-                     as.numeric(pheno$NK)+
-                     as.numeric(pheno$Bcell)+
-                     as.numeric(pheno$Mono)+
-                     as.numeric(pheno$Gran)+
-                     as.numeric(pheno$nRBC))
+model <- model.matrix(~as.factor(pheno$Smoke)+
+                      as.factor(pheno$Sex)+
+                      as.numeric(pheno$Age)+
+                      as.numeric(pheno$CD8T)+
+                      as.numeric(pheno$NK)+
+                      as.numeric(pheno$Bcell)+
+                      as.numeric(pheno$Mono)+
+                      as.numeric(pheno$Gran))
 
-#'Let's run the regional analysis using the Mvals from our preprocessed data
-myannotation <- cpg.annotate("array", Mvals.ComBat, analysis.type="differential",
-                             design=model, coef=2)
+#'Regions are now agglomerated from groups of significant probes 
+#'Let's run the regional analysis using the mvals from our preprocessed data
+myannotation <- cpg.annotate("array", mvals, analysis.type="differential",arraytype="EPIC",
+                             what="M",design=model, coef=2)
+
+
+#'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
+model <- model.matrix(~as.factor(pheno$Smoke)+
+                      as.factor(pheno$Sex)+
+                      as.numeric(pheno$Age))
+
+myannotation <- cpg.annotate("array", mvals, analysis.type="differential",arraytype="EPIC",
+                             what="M",design=model, coef=2)
 
 #'Regions are now agglomerated from groups of significant probes 
 #'where the distance to the next consecutive probe is less than lambda nucleotides away
-dmrcoutput.sex <- suppressMessages(dmrcate(myannotation, lambda=1000, C=2))
+dmrcoutput.smoking <- dmrcate(myannotation, lambda=1000, C=2)
 
 #'Let's look at the results
-head(dmrcoutput.sex$results)
+head(dmrcoutput.smoking$results)
 
 #'Visualizing the data can help us understand where the region lies 
 #'relative to promoters, CpGs islands or enhancers
 
 #' Let's extract the genomic ranges and annotate to the genome
-results.ranges <- extractRanges(dmrcoutput.sex, genome = "hg19")
+results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
 
 #' Plot the DMR using the Gviz
 
 #' if you are interested in plotting genomic data the Gviz is extremely useful
 #'Let's look at the first region
 results.ranges[1]
-pheno$sex <- ifelse(pheno$Sex==1, "Female", "Male")
-groups <- c(Female="magenta", Male="forestgreen")
-cols <- groups[as.character(pheno$sex)]
+pheno$Smoke <- ifelse(pheno$Smoke==1, "Smoker", "Non-Smoker")
+groups <- c(Smoker="magenta", Male="Non-Smoker")
+cols <- groups[as.character(pheno$Smoke)]
 #+ fig.width=9, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, phen.col=cols, genome="hg19")
+DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, what="Beta", phen.col=cols, genome="hg19", arraytype = "EPIC")
 
 #'Extracting CpGs-names and locations
-chr <- gsub(":.*", "", dmrcoutput.sex$results$coord[1])
-start <- gsub("-.*", "", gsub(".*:", "", dmrcoutput.sex$results$coord[1]))
-end <- gsub(".*-", "", dmrcoutput.sex$results$coord[1])
+chr <- gsub(":.*", "", dmrcoutput.smoking$results$coord[1])
+start <- gsub("-.*", "", gsub(".*:", "", dmrcoutput.smoking$results$coord[1]))
+end <- gsub(".*-", "", dmrcoutput.smoking$results$coord[1])
 #'CpG ID and individual metrics
-cpgs <- dmrcoutput.sex$input[dmrcoutput.sex$input$CHR %in% chr & dmrcoutput.sex$input$pos >= start & dmrcoutput.sex$input$pos <=end,]
-knitr::kable(cpgs[1:5,])
+cpgs <- dmrcoutput.smoking$input[dmrcoutput.smoking$input$CHR %in% chr & dmrcoutput.smoking$input$pos >= start & dmrcoutput.smoking$input$pos <=end,]
+knitr::kable(cpgs[1:4,])
 
 
 #' End of script 03
