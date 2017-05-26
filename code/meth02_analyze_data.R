@@ -16,7 +16,8 @@ suppressPackageStartupMessages({
   library(CpGassoc)
   library(data.table)
   library(qqman)
-  library(IlluminaHumanMethylationEPICanno.ilmn12.hg19)
+  library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+  library(glmnet)
   library(DMRcate)
   library(MASS) 
   library(sandwich) 
@@ -56,7 +57,7 @@ nCpG
 #' Here we run an EWAS on Smoking status (as a predictor of methylation)  
 
 #' First we can run a linear regression on a single CpG that we have already picked
-j <- 133211
+j <- 19094
 CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
@@ -140,6 +141,21 @@ table(results2$results[,5] < 0.05)
 #' we can also see them with:
 results2$FDR.sig
 
+#'using mvalues
+results3 <- cpg.assoc(betas.clean, pheno[,"Smoke"], 
+                      covariates=pheno[,"Sex"] + pheno[,"Age"]+
+                        pheno[,"CD8T"]+ pheno[,"CD4T"] +
+                        pheno[,"NK"]  + pheno[,"Bcell"] + 
+                        pheno[,"Mono"] + pheno[,"Gran"], 
+                      logit.transform = TRUE)
+
+#' look at the results
+head(cbind(results3$coefficients[,4:5], P.value=results3$results[,3])[order(results3$results[,3]),])
+#' Bonferroni significant hits
+table(results3$results[,3] < 0.05/(nCpG))
+#' FDR significant hits
+results3$FDR.sig
+
 #' results
 IlluminaAnnot<-as.data.frame(getAnnotation(Gbeta))
 
@@ -166,6 +182,7 @@ head(datamanhat[order(datamanhat$Pval), ])
 par(mfrow=c(1,1))
 plot(results1, main="QQ plot for association between methylation and Smoking")
 plot(results2, main="QQ plot for association between methylation and Smoking \n adjusted for cell proportions")
+plot(results3, main="QQ plot for association between (mvals) methylation and Smoking \n adjusted for cell proportions")
 
 #' Lambda - this is a summary measure of genomic inflation  
 #' ratio of observed vs expected median p-value - is there early departure of the qqline?  
@@ -175,6 +192,8 @@ lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qc
 lambda(results1$results[,3])
 #' Lambda after cell type adjustment
 lambda(results2$results[,3])
+#' Lambda after cell type adjustment with mvalues
+lambda(results3$results[,3])
 
 #' Volcano Plot-results2
 #' with Bonferroni threshold and current FDR
@@ -191,7 +210,31 @@ manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG",
           genomewideline = -log10(0.05/(nCpG)), 
           main = "Manhattan Plot \n adjusted for cell proportions")
 
+#'###########
+#'LASSO on model 2: beta values, fully adjusted
+#' select most significant 1000 hits
+betas.restricted <- t(betas.clean[rownames(betas.clean)%in%rownames(results2.tab[1:1000,]),])
+#' run a lasso and plot the lambda parameter
+fits.lasso <- cv.glmnet(betas.restricted, pheno[,1], alpha=1, family="binomial")
+plot(fits.lasso)
+
+# we perform variable selection based on the smallest CVM
+small.lambda.index <- which(fits.lasso$lambda == fits.lasso$lambda.min)
+small.lambda.betas <- fits.lasso$glmnet.fit$beta[,small.lambda.index]
+#' select the hits and check how many are not null
+selectedVariableIndex<-(abs(small.lambda.betas)>0)
+beta_nonzero=small.lambda.betas[selectedVariableIndex]
+length(beta_nonzero)
+colnames(betas.restricted)[selectedVariableIndex]
+#' coefficients of the lasso
+Coeff.lasso<-coef(fits.lasso, s = fits.lasso$lambda.min)
+#' 
+#' #predict smoking
+pheno$predicted.val = predict(fits.lasso, betas.restricted, s=0.001, type="response")
+plot(predicted.val, pheno[,1])
+
 #' cleanup
-rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, lambda)
+rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, 
+   lambda, betas.restricted, fits.lasso, small.lambda.index, selectedVariableIndex, beta_nonzero, Coeff.lasso)
 #' End of script 02
 #'  
