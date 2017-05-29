@@ -193,22 +193,23 @@ cpg_gwas_enrichment <- function(cpg_list, met_annot, gwascat, traits=NULL) {
 	gene_gwas1 <- sort(gsub(" ", "", unique(unlist(strsplit(gwascat[, rep_gene_col], ",")))));
 	gene_gwas2 <- sort(gsub(" ", "", unique(unlist(strsplit(gwascat[, map_gene_col], " - ")))));
 	gene_gwas <- sort(intersect(union(gene_gwas1, gene_gwas2), met_genes));
-	N_gwas <- length(gene_gwas);
-	b_gwas <- unlist(lapply(tbl[, genesym_col], function(x) sum(unique(unlist(strsplit(x, ";"))) %in% gene_gwas) > 0));
+	N_gwas <- length(gene_gwas); ### number of gene in gwas that are in the methylation annotation
+	b_gwas <- unlist(lapply(tbl[, genesym_col], function(x) sum(unique(unlist(strsplit(x, ";"))) %in% gene_gwas) > 0)); ## binary, is sig cpg gene in GWAS
 
-	gene_meta <- unique(unlist(strsplit(tbl[, genesym_col], ";")));
+	gene_meta <- unique(unlist(strsplit(tbl[, genesym_col], ";"))); ### unique genes in the sig cpgs
 	b_meta1 <- unlist(lapply(gwascat[, rep_gene_col], function(x) sum(unique(unlist(strsplit(x, ", "))) %in% gene_meta) > 0));
 	b_meta2 <- unlist(lapply(gwascat[, map_gene_col], function(x) sum(unique(unlist(strsplit(x, " - "))) %in% gene_meta) > 0));
-	b_meta <- b_meta1 | b_meta2;
+	b_meta <- b_meta1 | b_meta2; ### is at least one gene name from gwas_cat in gene_meta, not sure what the number of rows corresponds to
 
 	hit_genes <- unique(unlist(strsplit(tbl[, genesym_col], ";")));
 	N_hit <- length(hit_genes);
 	N_intersect <- length(unique(tbl[b_gwas, genesym_col]));
-	overall_p <- enrichment(num_unique_genes, N_gwas, N_hit, N_intersect);
+	overall_p <- enrichment(num_unique_genes, N_gwas, N_hit, N_intersect); ### enrichment for total genes in sig cpgs for genes in GWAS with met_annot as background
 	diseases <- sort(unique(gwascat[b_meta, disease_col]));
 	n_genes_hit <- rep(0, length(diseases));
 	n_genes_in_gwas <- rep(0, length(diseases));
 	pval <- rep(0, length(diseases));
+	hyper_pval <- rep(0, length(diseases));
 	genes_in_gwas <- rep("", length(diseases));
 	genes_in_list <- rep("", length(diseases));
 	
@@ -217,7 +218,7 @@ cpg_gwas_enrichment <- function(cpg_list, met_annot, gwascat, traits=NULL) {
 		b <- gwascat[, disease_col] == disease;
 		gene_gwas1_d <- sort(gsub(" ", "", unique(unlist(strsplit(gwascat[b, rep_gene_col], ",")))));
 		gene_gwas2_d <- sort(gsub(" ", "", unique(unlist(strsplit(gwascat[b, map_gene_col], " - ")))));
-		gene_gwas_d <- sort(unique(intersect(union(gene_gwas1_d, gene_gwas2_d), met_genes)));
+		gene_gwas_d <- sort(unique(intersect(union(gene_gwas1_d, gene_gwas2_d), met_genes))); ### genes that are in the gwas & were on the array
 		n1 <- length(gene_gwas_d);
 
 		#b2 <- unlist(lapply(tbl[, genesym_col], function(x) sum(unique(unlist(strsplit(x, ";"))) %in% gene_gwas_d) > 0));
@@ -227,21 +228,25 @@ cpg_gwas_enrichment <- function(cpg_list, met_annot, gwascat, traits=NULL) {
 		#if (n2 > n1) n2 <- n1;
 	
 		hits <- unique(intersect(gene_gwas_d, gene_meta));
-		n2 <- length(hits);
+		n2 <- length(hits); ### genes that were in the gwas for the disease and were a signficant CpG gene
 		n_genes_in_gwas[i] <- n1;
 		n_genes_hit[i] <- n2;
 		#cat(i, disease, num_unique_genes, n1, N_hit, n2, "\n");
 		#cat(gene_gwas_d, "\n");
 		#cat(unique(intersect(gene_gwas_d, gene_meta)), "\n");
+		overall_p <- enrichment(num_unique_genes, N_gwas, N_hit, N_intersect); ### enrichment for total genes in sig cpgs for genes in GWAS with met_annot as background
+		
 		pval[i] <- enrichment(num_unique_genes, n1, N_hit, n2);
+		hyper_pval[i] <- phyper(n2-1, n1, num_unique_genes-n1, N_hit, lower.tail=FALSE) ## the -1 makes it the probability of observing as many or more under null as opposed to strictly more
 		#cat(pval[i], "\n");
 		genes_in_gwas[i] <- paste(gene_gwas_d, collapse=";");
 		genes_in_list[i] <- paste(hits, collapse=";");
 	}
 	fdr = p.adjust(pval, "BH");
+	hyper.fdr = p.adjust(hyper_pval, "BH")
 
 	gwas_enrichment_tbl <- data.frame(Diseases=diseases, N_Genes_In_GWAS = n_genes_in_gwas, N_Genes_In_Dataset = n_genes_hit, Enrichment_P = pval,
-		Enrichment_FDR = fdr, GenesInGWASCat = genes_in_gwas, GenesInList = genes_in_list);
+		Enrichment_FDR = fdr, Hypergeo_P = hyper_pval, Hypergeo_FDR = hyper.fdr, GenesInGWASCat = genes_in_gwas, GenesInList = genes_in_list);
 	gwas_enrichment_tbl <- gwas_enrichment_tbl[order(gwas_enrichment_tbl[, "Enrichment_P"]), ];
 	attr(gwas_enrichment_tbl, "overall_enrichment_p") <- overall_p;
 	attr(gwas_enrichment_tbl, "n_genes_in_gwas") <- N_gwas;
@@ -249,34 +254,4 @@ cpg_gwas_enrichment <- function(cpg_list, met_annot, gwascat, traits=NULL) {
 	attr(gwas_enrichment_tbl, "n_traits") <- length(diseases);
 	
 	return(gwas_enrichment_tbl);
-}
-
-# two sided doubling mid p-value for enrichment/depletion test
-# as described in: http://bioinformatics.oxfordjournals.org/content/23/4/401.full
-# function takes a table of hits (rows), by annotation variable (col) 
-# Taken from code written by Allan Just
-doublemidp.test <- function(hits2x2){
-  if(class(hits2x2) != "table" | !all(dim(hits2x2) == c(2, 2))){
-    stop("this test expects a 2x2 table")
-  }
-  # we double for the two-sided test
-  2*min(
-    # mid-p-val for enrichment
-    phyper(hits2x2[2, 2],
-           sum(hits2x2[, 2]),
-           sum(hits2x2[, 1]),
-           sum(hits2x2[2, ]), lower.tail = FALSE) +
-      dhyper(hits2x2[2, 2],
-             sum(hits2x2[, 2]),
-             sum(hits2x2[, 1]),
-             sum(hits2x2[2, ])) * 0.5,
-    # consider depletion (reversing cols of 2x2)
-    phyper(hits2x2[2, 1],
-           sum(hits2x2[, 1]),
-           sum(hits2x2[, 2]),
-           sum(hits2x2[2, ]), lower.tail = FALSE) +
-      dhyper(hits2x2[2, 1],
-             sum(hits2x2[, 1]),
-             sum(hits2x2[, 2]),
-             sum(hits2x2[2, ])) * 0.5)
 }
