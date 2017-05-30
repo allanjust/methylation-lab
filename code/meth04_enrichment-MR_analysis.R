@@ -137,7 +137,85 @@ gwas_enrichment[c(1:5),c("Diseases","N_Genes_In_GWAS","N_Genes_In_Dataset","Enri
 #results.go.enrich.cn <- gometh(sig.cpg=unadj.cn.overlap$CPG.Labels, all.cpg=rownames(noob.rcp), collection="GO", array.type="EPIC")
 #topGO(results.go.enrich.cn)
 
+###########################################
+#
+# MR analyses using MR-base
+# there is an online version (www.mrbase.org)
+# but we will be using the R code available via GitHub
+#
+# Hypothesis: Smoking has a causal effect on DNA methylation
+# MR Model: IV  -> Exposure -> Outcome
+#           SNP -> Smoking  -> Methylation
+##########################################
 
+# step 1: Install necessary libraries and code from GitHub
+if (!require(jsonlite)) install.packages("jsonlite")          # Installs devtools package if not already installed
+library(jsonlite)
+if (!require(devtools)) install.packages("devtools")          # Installs devtools package if not already installed
+library(devtools)
 
+install_github("MRCIEU/TwoSampleMR")
+library(TwoSampleMR)
+install_github("MRCIEU/MRInstruments")
+library(MRInstruments)
+
+# step 2: download gwas catalog data to get IVs
+data(gwas_catalog)
+smk.gwas <- subset(gwas_catalog, grepl("smoking",Phenotype))
+## alternative
+## load(data/MRBase_GWAS-Catalog_Smoking.RData)
+
+# step 3: format the GWAS data as the exposure
+init.gwas <- format_data(subset(smk.gwas, Phenotype=="Smoking behavior (smoking initiation)"))
+cess.gwas <- format_data(subset(smk.gwas, Phenotype=="Smoking behavior (smoking cessation)"))
+
+# step 4: load the (pre-processed & re-analyzed) meQTL data as the outcome 
+## data taken from the BIOS eQTL browser: http://www.genenetwork.nl/biosqtlbrowser/
+outcome.dat <- read_outcome_data(
+  snps=c(init.gwas$SNP,cess.gwas$SNP),
+  filename="M:/Epigenetics Boot Camp/BootCampDemo/Meta_Processed_BIOS_Init_Cess_GWAS_meQTLs.txt",
+  sep="\t",
+  snp_col="SNP",
+  beta_col="Beta",
+  se = "SE",
+  effect_allele_col="effect_allele",
+  pval_col="Pvalue",
+  other_allele_col="other_allele"
+)
+
+## step 5: restrict to CpGs with a nominal (P < 0.05) signal in the EWAS
+nom_only=TRUE
+if(nom_only)
+{
+  outcome.dat <- subset(outcome.dat, outcome%in%results.anno$CPG.Labels[results.anno$P.value < 0.05])
+}
+
+### step 6: hamonise the data (make sure alleles match) & run the analysis on smoking cessation and initiation
+if(outcome.dat$SNP%in%cess.gwas$SNP)
+{
+  cess.dat <- harmonise_data(
+    exposure_dat=cess.gwas,
+    outcome_dat = outcome.dat
+  )
+  cess.MR <- mr(cess.dat)
+  cess.MR <- merge(results.anno[,c("CPG.Labels","T.statistic","P.value","UCSC_RefGene_Name")], cess.MR, by.x="CPG.Labels", by.y="outcome")
+  
+  ### if we used multiple variants could generate a report describing several sensitivity analyses
+  ## mr_report(cess.MR, output_path=".", output_type="html", author="Me", study="Smoking and methylation")
+}
+
+if(outcome.dat$SNP%in%init.dat$SNP)
+{
+  init.dat <- harmonise_data(
+    exposure_dat=init.gwas,
+    outcome_dat = outcome.dat
+  )
+  
+  init.MR <- mr(init.dat)
+  init.MR <- merge(results.anno[,c("CPG.Labels","T.statistic","P.value","UCSC_RefGene_Name")], init.MR, by.x="CPG.Labels", by.y="outcome")
+}
+
+## check output to make sure that effect direction from EWAS matches that from the MR
+cess.MR
 
 
