@@ -212,6 +212,6 @@ manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG",
 
 #' cleanup
 rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, 
-   lambda, betas.restricted)
+   lambda)
 #' End of script 02
 #'  
