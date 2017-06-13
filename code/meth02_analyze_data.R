@@ -210,31 +210,8 @@ manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG",
           genomewideline = -log10(0.05/(nCpG)), 
           main = "Manhattan Plot \n adjusted for cell proportions")
 
-#'###########
-#'LASSO on model 2: beta values, fully adjusted
-#' select most significant 1000 hits
-betas.restricted <- t(betas.clean[rownames(betas.clean)%in%rownames(results2.tab[1:1000,]),])
-#' run a lasso and plot the lambda parameter
-fits.lasso <- cv.glmnet(betas.restricted, pheno[,1], alpha=1, family="binomial")
-plot(fits.lasso)
-
-# we perform variable selection based on the smallest CVM
-small.lambda.index <- which(fits.lasso$lambda == fits.lasso$lambda.min)
-small.lambda.betas <- fits.lasso$glmnet.fit$beta[,small.lambda.index]
-#' select the hits and check how many are not null
-selectedVariableIndex<-(abs(small.lambda.betas)>0)
-beta_nonzero=small.lambda.betas[selectedVariableIndex]
-length(beta_nonzero)
-colnames(betas.restricted)[selectedVariableIndex]
-#' coefficients of the lasso
-Coeff.lasso<-coef(fits.lasso, s = fits.lasso$lambda.min)
-#' 
-#' #predict smoking
-pheno$predicted.val = predict(fits.lasso, betas.restricted, s=0.001, type="response")
-plot(predicted.val, pheno[,1])
-
 #' cleanup
 rm(j, nCpG, CpG.name, CpG.level, CpG.rlm, CpG.mlevel, lm.fit.rob.bayes, datamanhat, IlluminaAnnot, IlluminaHumanMethylation450kanno.ilmn12.hg19, 
-   lambda, betas.restricted, fits.lasso, small.lambda.index, selectedVariableIndex, beta_nonzero, Coeff.lasso)
+   lambda, betas.restricted)
 #' End of script 02
 #'  
