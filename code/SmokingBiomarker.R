@@ -1,3 +1,7 @@
+#'# Smoking Biomarker from betas.clean data
+#' Using data in our script:  
+#' meth02_analyze_data.R  
+
 #'###########
 #'LASSO on model 2: beta values, fully adjusted
 #' select most significant 1000 hits
@@ -17,6 +21,6 @@ colnames(betas.restricted)[selectedVariableIndex]
 #' coefficients of the lasso
 Coeff.lasso<-coef(fits.lasso, s = fits.lasso$lambda.min)
 #' 
-#' #predict smoking
+#' predict smoking
 pheno$predicted.val = predict(fits.lasso, betas.restricted, s=0.001, type="response")
 plot(predicted.val, pheno[,1])
