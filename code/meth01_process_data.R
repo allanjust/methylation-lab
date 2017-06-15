@@ -135,7 +135,7 @@ nrow(WB.noob)
 WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
 nrow(WB.noob)
 # cleanup
-rm(intersect, detect.p, WB)
+rm(intersect, detect.p)
 
 #' #Probe type adjustment  
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes  
@@ -219,6 +219,17 @@ plotMDS(betas.rcp, top=10000, gene.selection="common",
         dim=c(1,2),cex=1.5)
 legend("topright", legend=levels(factor(pData(WB.noob)$SEX)),bty='n',
        cex=1.5,pch=17,col=c("deeppink","blue"))
+
+
+#'## predict sex from methylation
+Gbeta <- mapToGenome(WB)  #map to the genome
+#' getSex predicts sex based on X and Y chromosome methylation intensity
+getSex(Gbeta) 
+#' we see that our predictions match the phenodata
+table(pData(WB)$SEX,getSex(Gbeta)$predictedSex)
+#' We can actually look at the intensities in the sex-crhomosomes
+plotSex(getSex(Gbeta, cutoff = -2),id=pData(WB)$SEX)
+# cleanup
 
 
 #' # memory usage

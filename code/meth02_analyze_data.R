@@ -24,15 +24,6 @@ suppressPackageStartupMessages({
   library(lmtest) 
 })
 
-#'## predict sex from methylation
-Gbeta <- mapToGenome(WB)  #map to the genome
-#' getSex predicts sex based on X and Y chromosome methylation intensity
-getSex(Gbeta) 
-#' we see that our predictions match the phenodata
-table(pData(WB)$SEX,getSex(Gbeta)$predictedSex)
-#' We can actually look at the intensities in the sex-crhomosomes
-plotSex(getSex(Gbeta, cutoff = -2),id=pData(WB)$SEX)
-# cleanup
 
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Smoke=pData(WB.noob)$SMOKE_STATUS, Sex=pData(WB.noob)$SEX, Age=pData(WB.noob)$AGE,
