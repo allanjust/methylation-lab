@@ -214,7 +214,7 @@ rm(PCs, Mvals, cummvar, PCobject)
 
 #' Phenotype associated with large sources of variability
 #+ fig.width=8, fig.height=6, dpi=300
-plotMDS(betas.rcp, top=1000, gene.selection="common",
+plotMDS(betas.rcp, top=10000, gene.selection="common",
         pch=17,col=c("deeppink","blue")[factor(pData(WB.noob)$SEX)],
         dim=c(1,2),cex=1.5)
 legend("topright", legend=levels(factor(pData(WB.noob)$SEX)),bty='n',
