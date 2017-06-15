@@ -18,7 +18,7 @@ install.packages("~/EPICdemo_0.1.0.tar.gz", repos = NULL)
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape","glmnet", 
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest")
-methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix",
+methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix","IlluminaHumanMethylationEPICmanifest",
                       "sva", "IlluminaHumanMethylationEPICanno.ilmn12.hg19", 
                       "DMRcate", "shinyMethyl")
 #' install these from CRAN:
