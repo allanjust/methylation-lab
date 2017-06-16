@@ -30,10 +30,10 @@ library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # annotation for Illumina
 #library(EPICdemo) # example dataset - not a publically available package
 
 #' import EPIC data from a sample sheet and idat files
-idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata"
-targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F)
-targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position)
-WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T)
+idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata" # path of the folder
+targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F) #sample information
+targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position) # name of the files
+WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T) # read the idat file one by one
 ncol(WB)
 #' alternative way to import idat files, using EPICdemo (not a publically available package)
 #sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
