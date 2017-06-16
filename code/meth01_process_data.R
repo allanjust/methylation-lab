@@ -22,8 +22,8 @@ library(ENmix) # probe type adjustment "rcp"
 suppressMessages(library(limma)) # for MDS plots
 suppressMessages(library(reshape,scales)) # reshape data and graphig 
 suppressMessages(require(sva)) # for addressing batch effects
-library(IlluminaHumanMethylationEPICmanifest)
-library(IlluminaHumanMethylationEPICanno.ilmn10b.hg19)
+library(IlluminaHumanMethylationEPICmanifest) # manifest for Illumina's EPIC methylation 
+library(IlluminaHumanMethylationEPICanno.ilmn10b.hg19) # annotation for Illumina's EPIC methylation arrays.
 #' Here we will use an existing methylation dataset - EPIC in peripheral blood (20 samples)  
 #' To read in your own dataset (usually "idat files" ending in .idat)  
 #' See the help for ?read.metharray.exp  
