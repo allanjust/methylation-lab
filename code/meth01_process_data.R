@@ -34,7 +34,7 @@ idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata"
 targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F)
 targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position)
 WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T)
-
+#' alternative way to import EPIC data, using EPICdemo
 #sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
 #WB <- read.metharray.exp(targets = sheet)
 ncol(WB)
