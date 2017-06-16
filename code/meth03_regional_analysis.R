@@ -26,9 +26,9 @@ model <- model.matrix(~as.factor(pheno$Smoke)+
                       as.numeric(pheno$Gran))
 
 #'Regions are now agglomerated from groups of significant probes 
-#'Let's run the regional analysis using the mvals from our preprocessed data
-myannotation <- cpg.annotate("array", mvals, analysis.type="differential",arraytype="EPIC",
-                             what="M",design=model, coef=2)
+#'Let's run the regional analysis using the Beta-values from our preprocessed data
+myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
+                             what="Beta",design=model, coef=2)
 
 
 #'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
@@ -36,8 +36,8 @@ model <- model.matrix(~as.factor(pheno$Smoke)+
                       as.factor(pheno$Sex)+
                       as.numeric(pheno$Age))
 
-myannotation <- cpg.annotate("array", mvals, analysis.type="differential",arraytype="EPIC",
-                             what="M",design=model, coef=2)
+myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
+                             what="Beta",design=model, coef=2)
 
 #'Regions are now agglomerated from groups of significant probes 
 #'where the distance to the next consecutive probe is less than lambda nucleotides away
