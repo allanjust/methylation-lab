@@ -34,10 +34,11 @@ idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata"
 targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F)
 targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position)
 WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T)
+ncol(WB)
 #' alternative way to import EPIC data, using EPICdemo
 #sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
 #WB <- read.metharray.exp(targets = sheet)
-ncol(WB)
+
 
 #' Look at the attributes of this dataset  
 #' It is stored as a RGChannelSet which means it is not yet processed (red and green signals stored separately)
