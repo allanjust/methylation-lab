@@ -25,7 +25,7 @@ suppressMessages(require(sva)) # for addressing batch effects
 #' Here we will use an existing methylation dataset - EPIC in peripheral blood (20 samples)  
 #' To read in your own dataset (usually "idat files" ending in .idat)  
 #' See the help for ?read.metharray.exp  
-library(EPICdemo) # example dataset - not a publically available package
+#library(EPICdemo) # example dataset - not a publically available package
 
 #' import EPIC data from a sample sheet and idat files
 sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
