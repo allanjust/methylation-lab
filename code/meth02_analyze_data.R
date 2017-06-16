@@ -197,8 +197,6 @@ abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, 
 
 #'## Manhattan plot for cell-type adjusted EWAS  
 #' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
-datamanhat$Chr<-ifelse(datamanhat$Chr=="chrX", "chr23", datamanhat$Chr)
-datamanhat$Chr<-ifelse(datamanhat$Chr=="chrY", "chr24", datamanhat$Chr)
 datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
 
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
