@@ -12,6 +12,7 @@ knitr::opts_knit$set(root.dir = "../")
 load("~/BootCamp_Epigenetics/Data/WB.noob.RData")
 dim(WB.noob)
 cellprop<-read.csv("~/BootCamp_Epigenetics/Data/cellprop_WB_20samps_EPICdemo.csv")
+load("~/BootCamp_Epigenetics/Data/betas.rcp.RData")
 
 #' load packages
 # To Fix lirary IlluminaHumanMethylation450kanno.ilmn12.hg19
