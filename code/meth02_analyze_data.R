@@ -77,8 +77,11 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Smoke"],m
                    Max=round(simplify2array(tapply(CpG.mlevel, pheno[,"Smoke"],max)),3),
                    SD=round(simplify2array(tapply(CpG.mlevel, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
-
-boxplot(CpG.mlevel ~ pheno[,"Smoke"], main="M-values")
+par(mfrow=c(1,2))
+boxplot(CpG.level ~ pheno[,"Smoke"], main=paste0("beta-values ", CpG.name), col=c("blue","red"), xaxt="n")
+axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
+boxplot(CpG.mlevel ~ pheno[,"Smoke"], main=paste0("M-values ", CpG.name), col=c("blue","red"), xaxt="n")
+axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 #' linear regression on m-values
 summary(lm(CpG.mlevel~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
