@@ -165,10 +165,6 @@ datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot
                          Mapinfo=IlluminaAnnot$pos, UCSC_RefGene_Name=IlluminaAnnot$UCSC_RefGene_Name, 
                          Pval=results2$results[,3], Eff.Size = results2$coefficients[,4], Std.Error = results2$coefficients[,5])
 
-#' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
-datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
-datamanhat$Chr <-  as.integer(substring(datamanhat$Chr, 4))
-
 #' see where the top hits are
 head(datamanhat[order(datamanhat$Pval), ])
 
@@ -200,6 +196,9 @@ abline(h = -log10(0.05/(nCpG)), lty=1, col="#FDE725FF", lwd=2)
 abline(h = -log10(max(results2$results[results2$results[,5] < 0.05,3])), lty=1, col="#440154FF", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
+#' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
+datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
+datamanhat$Chr <-  as.integer(substring(datamanhat$Chr, 4))
 #' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
 manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", 
           suggestiveline = -log10(max(results2$results[results2$results[,5] < 0.05,3])), 
