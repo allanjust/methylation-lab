@@ -182,6 +182,7 @@ rm(onetwo, typeI, typeII)
 #' This can create batch effects (technical variation) with different intensities by position (row effect).  
 #' Other commonly observed batch effects include bisulfite processing plate, chip, and processing date.
 #' Let's check if samples varied across rows in these data (even in different chips):
+pData(WB.noob)$Array <- pData(WB.noob)$Sentrix_Position
 knitr::kable(t(as.matrix(table(pData(WB.noob)$Array))), 
              col.names = paste0("Row ", 1:8))
 
