@@ -12,8 +12,6 @@ R.version$version.string
 #' this step requires agreeing for each update (y for yes)
 update.packages()
 
-install.packages("~/EPICdemo_0.1.0.tar.gz", repos = NULL)
-
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
 methpackagesCRAN <- c("CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape","glmnet", 
