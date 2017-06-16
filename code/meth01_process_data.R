@@ -22,14 +22,21 @@ library(ENmix) # probe type adjustment "rcp"
 suppressMessages(library(limma)) # for MDS plots
 suppressMessages(library(reshape,scales)) # reshape data and graphig 
 suppressMessages(require(sva)) # for addressing batch effects
+library(IlluminaHumanMethylationEPICmanifest)
+library(IlluminaHumanMethylationEPICanno.ilmn10b.hg19)
 #' Here we will use an existing methylation dataset - EPIC in peripheral blood (20 samples)  
 #' To read in your own dataset (usually "idat files" ending in .idat)  
 #' See the help for ?read.metharray.exp  
 #library(EPICdemo) # example dataset - not a publically available package
 
 #' import EPIC data from a sample sheet and idat files
-sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
-WB <- read.metharray.exp(targets = sheet)
+idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata"
+targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F)
+targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position)
+WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T)
+
+#sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
+#WB <- read.metharray.exp(targets = sheet)
 ncol(WB)
 
 #' Look at the attributes of this dataset  
