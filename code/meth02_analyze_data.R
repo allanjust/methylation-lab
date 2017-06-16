@@ -62,7 +62,8 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],mi
                    SD=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
 #' difference in beta methylation values between Smokers and non smokers
-boxplot(CpG.level ~ pheno[,"Smoke"], main="Beta-values")
+boxplot(CpG.level ~ pheno[,"Smoke"], main="Beta-values", col=c("blue","red"), xaxt="n")
+axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 #' linear regression on betas
 summary(lm(CpG.level~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
