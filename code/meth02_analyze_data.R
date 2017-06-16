@@ -167,6 +167,7 @@ datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot
 
 #' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
 datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
+datamanhat$Chr <-  as.integer(substring(datamanhat$Chr, 4))
 
 #' see where the top hits are
 head(datamanhat[order(datamanhat$Pval), ])
