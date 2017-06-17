@@ -33,13 +33,13 @@ suppressPackageStartupMessages({
 #' consolidate our phenodata
 pheno <- as.data.frame(cbind(Smoke=pData(WB.noob)$SMOKE_STATUS, Sex=pData(WB.noob)$SEX, Age=pData(WB.noob)$AGE,
                              Array=pData(WB.noob)$Array, cellprop))
+# create a dummy variable for smoke # 1 Smoker , 0 non-smokers
 pheno$Smoke <- ifelse(pheno$Smoke=="SMOKER",1,0)
-# 1 Smoker , 0 non-smokers
 
-# cleanup
+# cleanup 
 rm(WB.noob)
 
-#' quick check of the distribution of gender between plates
+#' quick check of the distribution of smoke between arrays
 table(pheno[,"Smoke"], pheno[,"Array"])
 
 ## Cleaning up the methylation data
