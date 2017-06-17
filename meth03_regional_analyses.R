@@ -17,13 +17,13 @@ suppressMessages(library(DMRcate)) # Popular package for regional DNA methylatio
 
 #' First we need to define a model
 model <- model.matrix(~as.factor(pheno$Smoke)+
-                      as.factor(pheno$Sex)+
-                      as.numeric(pheno$Age)+
-                      as.numeric(pheno$CD8T)+
-                      as.numeric(pheno$NK)+
-                      as.numeric(pheno$Bcell)+
-                      as.numeric(pheno$Mono)+
-                      as.numeric(pheno$Gran))
+                        as.factor(pheno$Sex)+
+                        as.numeric(pheno$Age)+
+                        as.numeric(pheno$CD8T)+
+                        as.numeric(pheno$NK)+
+                        as.numeric(pheno$Bcell)+
+                        as.numeric(pheno$Mono)+
+                        as.numeric(pheno$Gran))
 
 #'Regions are now agglomerated from groups of significant probes 
 #'Let's run the regional analysis using the Beta-values from our preprocessed data
@@ -33,8 +33,8 @@ myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",
 
 #'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
 model <- model.matrix(~as.factor(pheno$Smoke)+
-                      as.factor(pheno$Sex)+
-                      as.numeric(pheno$Age))
+                        as.factor(pheno$Sex)+
+                        as.numeric(pheno$Age))
 
 myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
                              what="Beta",design=model, coef=2)
