@@ -18,15 +18,15 @@ load("~/BootCamp_Epigenetics/Data/Gbeta.RData") # annotation
 #' load packages
 # To Fix lirary IlluminaHumanMethylation450kanno.ilmn12.hg19
 suppressPackageStartupMessages({
-  library(CpGassoc)
-  library(data.table)
-  library(qqman)
-  library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
-  library(glmnet)
-  library(DMRcate)
-  library(MASS) 
-  library(sandwich) 
-  library(lmtest) 
+  library(CpGassoc) # for running association analysis between methylation levels values and phenotype of interest
+  library(data.table) # for fast aggregation of large data 
+  library(qqman) # for visualization of data
+  library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # for annotation for Illumina's EPIC methylation arrays
+  library(glmnet) # for elastic net
+  library(DMRcate) # for regional analysis
+  library(MASS) # for basic statistics
+  library(sandwich) # for linear regression (robust sandwich variance estimator)
+  library(lmtest) # for testing Linear Regression Models
 })
 
 
