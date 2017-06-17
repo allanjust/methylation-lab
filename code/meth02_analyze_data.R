@@ -43,7 +43,7 @@ rm(WB.noob)
 table(pheno[,"Smoke"], pheno[,"Array"])
 
 ## Cleaning up the methylation data
-#' Filters a matrix of beta values by distance to single nucleotide polymorphism (SNP) and SNPs with minor allele frequency (MAF) of 5%. 
+#' Filters a matrix of beta values by distance to single nucleotide polymorphism (SNP) and SNPs with the minor allele frequency (MAF) of 5% (rare variant). 
 #' Also removes crosshybridising probes and sex-chromosome probes.
 dim(betas.rcp)
 betas.clean <- rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
