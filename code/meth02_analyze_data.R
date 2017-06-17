@@ -59,7 +59,7 @@ CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
 
-#' difference in methylation between males and females for this CpG
+#' difference in methylation between smokers and non-smokers for this CpG
 #' some descriptive statistics
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],min)),3),
                    Mean=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],mean)),3), 
