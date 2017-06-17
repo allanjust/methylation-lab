@@ -1,4 +1,4 @@
-#'# Regional DNA methylation analysis using DMRcate  
+#'# Regional DNA methylation analysis using DMRcate and bumphunter  
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R & meth02_process_data.R 
 #+ setdir03, echo = F
@@ -61,7 +61,7 @@ pheno$Smoke <- ifelse(pheno$Smoke==1, "Smoker", "Non-Smoker")
 groups <- c(Smoker="magenta", Male="Non-Smoker")
 cols <- groups[as.character(pheno$Smoke)]
 #+ fig.width=9, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.rcp, what="Beta", phen.col=cols, genome="hg19", arraytype = "EPIC")
+DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, what="Beta", phen.col=cols, genome="hg19", arraytype = "EPIC")
 
 #'Extracting CpGs-names and locations
 chr <- gsub(":.*", "", dmrcoutput.smoking$results$coord[1])
@@ -70,6 +70,16 @@ end <- gsub(".*-", "", dmrcoutput.smoking$results$coord[1])
 #'CpG ID and individual metrics
 cpgs <- dmrcoutput.smoking$input[dmrcoutput.smoking$input$CHR %in% chr & dmrcoutput.smoking$input$pos >= start & dmrcoutput.smoking$input$pos <=end,]
 knitr::kable(cpgs[1:4,])
+
+#'Create ratioset from clean betas
+data.rs <- RatioSet(Beta = betas.clean,annotation=c(array= "IlluminaHumanMethylationEPIC",  annotation = "ilm10b2.hg19")); # create RatioSet                                                                                      
+data.grs <- mapToGenome(data.rs); # create GenomicRatioSet  
+
+
+#'Bumphunter using 10% DNAm difference
+dmrs.10 <- bumphunter(data.grs, design = model, coef=2,nullMethod="bootstrap",cutoff = 0.20, B=10, type="Beta") # 29 bumps at 20% difference in methylation
+#'Look at top DMRs
+head(dmrs.10$table)
 
 
 #' End of script 03
