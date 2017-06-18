@@ -160,7 +160,6 @@ results3$FDR.sig
 #' qqplot and lambda interpretation  
 #+ fig.width=13, fig.height=7, dpi=300
 par(mfrow=c(1,1))
-plot(results1, main="QQ plot for association between methylation and Smoking")
 plot(results2, main="QQ plot for association between methylation and Smoking \n adjusted for cell proportions")
 plot(results3, main="QQ plot for association between (mvals) methylation and Smoking \n adjusted for cell proportions")
 
@@ -168,8 +167,6 @@ plot(results3, main="QQ plot for association between (mvals) methylation and Smo
 #' ratio of observed vs expected median p-value - is there early departure of the qqline
 #' estimated at -log10(median=0.5) ~ 0.3 on the x-axis of a qqplot  
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
-#' Lambda for the first EWAS
-lambda(results1$results[,3])
 #' Lambda after cell type adjustment
 lambda(results2$results[,3])
 #' Lambda after cell type adjustment with mvalues
