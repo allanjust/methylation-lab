@@ -157,7 +157,7 @@ table(results3$results[,3] < 0.05/(nCpG))
 #' FDR significant hits
 results3$FDR.sig
 
-#' results
+#' Map the results to the epigenetic annotation
 IlluminaAnnot<-as.data.frame(getAnnotation(Gbeta))
 
 #' Restrict to good quality probes and order data frames
