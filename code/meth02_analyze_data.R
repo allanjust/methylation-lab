@@ -157,23 +157,6 @@ table(results3$results[,3] < 0.05/(nCpG))
 #' FDR significant hits
 results3$FDR.sig
 
-#' Map the results to the epigenetic annotation
-IlluminaAnnot<-as.data.frame(getAnnotation(Gbeta))
-
-#' Restrict to good quality probes and order data frames
-IlluminaAnnot <- IlluminaAnnot[IlluminaAnnot$Name %in% results2$results$CPG.Labels,]
-IlluminaAnnot <- IlluminaAnnot[match(results2$results$CPG.Labels, IlluminaAnnot$Name),]
-
-#' Check that CpGs are align
-identical(IlluminaAnnot$Name,results2$results$CPG.Labels)
-
-datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
-                         Mapinfo=IlluminaAnnot$pos, UCSC_RefGene_Name=IlluminaAnnot$UCSC_RefGene_Name, 
-                         Pval=results2$results[,3], Eff.Size = results2$coefficients[,4], Std.Error = results2$coefficients[,5])
-
-#' see where the top hits are
-head(datamanhat[order(datamanhat$Pval), ])
-
 #' ## Genomic inflation in EWAS
 #' qqplot and lambda interpretation  
 #+ fig.width=13, fig.height=7, dpi=300
@@ -192,6 +175,23 @@ lambda(results1$results[,3])
 lambda(results2$results[,3])
 #' Lambda after cell type adjustment with mvalues
 lambda(results3$results[,3])
+
+#' Map the results to the epigenetic annotation
+IlluminaAnnot<-as.data.frame(getAnnotation(Gbeta))
+
+#' Restrict to good quality probes and order data frames
+IlluminaAnnot <- IlluminaAnnot[IlluminaAnnot$Name %in% results2$results$CPG.Labels,]
+IlluminaAnnot <- IlluminaAnnot[match(results2$results$CPG.Labels, IlluminaAnnot$Name),]
+
+#' Check that CpGs are align
+identical(IlluminaAnnot$Name,results2$results$CPG.Labels)
+
+datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
+                         Mapinfo=IlluminaAnnot$pos, UCSC_RefGene_Name=IlluminaAnnot$UCSC_RefGene_Name, 
+                         Pval=results2$results[,3], Eff.Size = results2$coefficients[,4], Std.Error = results2$coefficients[,5])
+
+#' see where the top hits are
+head(datamanhat[order(datamanhat$Pval), ])
 
 #' Volcano Plot-results2
 #' with Bonferroni threshold and current FDR
