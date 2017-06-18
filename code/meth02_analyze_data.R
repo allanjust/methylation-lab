@@ -102,7 +102,7 @@ summary(lm(CpG.mlevel~pheno[,"Smoke"]))$adj.r.squared
 #'see [Barfield et al. Bioinformatics 2012](http://www.ncbi.nlm.nih.gov/pubmed/22451269)  
 
 #' Smoking as predictor  
-#' note that CpGassoc is quite fast for running almost a half million regressions!
+#' note that CpGassoc is quite fast for running almost a million regressions!
 system.time(results1 <- cpg.assoc(betas.clean, pheno[,"Smoke"]))
 
 #' there are several components of the results
