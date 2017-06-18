@@ -165,8 +165,8 @@ plot(results2, main="QQ plot for association between methylation and Smoking \n 
 plot(results3, main="QQ plot for association between (mvals) methylation and Smoking \n adjusted for cell proportions")
 
 #' Lambda - this is a summary measure of genomic inflation  
-#' ratio of observed vs expected median p-value - is there early departure of the qqline?  
-#' estimated at -log10(0.5) ~ 0.3 on the x-axis of a qqplot  
+#' ratio of observed vs expected median p-value - is there early departure of the qqline
+#' estimated at -log10(median=0.5) ~ 0.3 on the x-axis of a qqplot  
 lambda <- function(p) median(qchisq(p, df=1, lower.tail=FALSE), na.rm=TRUE) / qchisq(0.5, df=1)
 #' Lambda for the first EWAS
 lambda(results1$results[,3])
