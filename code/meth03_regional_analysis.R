@@ -71,6 +71,9 @@ end <- gsub(".*-", "", dmrcoutput.smoking$results$coord[1])
 cpgs <- dmrcoutput.smoking$input[dmrcoutput.smoking$input$CHR %in% chr & dmrcoutput.smoking$input$pos >= start & dmrcoutput.smoking$input$pos <=end,]
 knitr::kable(cpgs[1:4,])
 
+#' Load package for regional analysis "Bumphunter"
+#'  see [Jaffe et al. Int J Epidemiol. 2012](https://www.ncbi.nlm.nih.gov/pubmed/22422453). 
+suppressMessages(library("bumphunter","minfi"))
 #'Create ratioset from clean betas
 data.rs <- RatioSet(Beta = betas.clean,annotation=c(array= "IlluminaHumanMethylationEPIC",  annotation = "ilm10b2.hg19")); # create RatioSet                                                                                      
 data.grs <- mapToGenome(data.rs); # create GenomicRatioSet  
@@ -79,7 +82,7 @@ data.grs <- mapToGenome(data.rs); # create GenomicRatioSet
 #'Bumphunter using 10% DNAm difference
 dmrs.10 <- bumphunter(data.grs, design = model, coef=2,nullMethod="bootstrap",cutoff = 0.20, B=10, type="Beta") # 29 bumps at 20% difference in methylation
 #'Look at top DMRs
-head(dmrs.10$table)
+dmrs.10$table[1:4,]
 
 
 #' End of script 03
