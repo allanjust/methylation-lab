@@ -4,7 +4,7 @@
 #'   
 
 #'## It is important that you have already updated R
-#'you should be running version 3.4.0
+#'you should be running version 3.4.1
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
