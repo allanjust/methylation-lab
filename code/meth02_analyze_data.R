@@ -54,7 +54,7 @@ nCpG
 
 #' First we can run a linear regression on a single CpG that we have already picked
 j <- 19094
-#j <- 468465
+#j <- 402150
 #j <- round(dim(betas.clean)[1]*runif(1,0,1),0)
 CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
