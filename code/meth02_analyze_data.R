@@ -73,6 +73,11 @@ axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 #' linear regression on betas
 summary(lm(CpG.level~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
+# what if we use raw beta?
+betas.raw 
+
+
+
 #' comparison with m-values
 CpG.mlevel <- log2(betas.clean[j,])-log2(1-betas.clean[j,])
 
