@@ -67,14 +67,26 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],mi
                    SD=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
 #' difference in beta methylation values between Smokers and non smokers
+
 boxplot(CpG.level ~ pheno[,"Smoke"], main="Beta-values", col=c("blue","red"), xaxt="n")
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 #' linear regression on betas
 summary(lm(CpG.level~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
-# what if we use raw beta?
-betas.raw 
+#' what if we use raw beta?
+betas.raw <- getBeta(WB)
+CpG.level.raw <- betas.raw[rownames(betas.raw) == CpG.name, ] #select the same CpG
+knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],min)),3),
+                   Mean=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],mean)),3), 
+                   Median=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],median)),3),
+                   Max=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],max)),3),
+                   SD=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],sd)),3),
+                   N=table(pheno[,"Smoke"])))
+
+
+boxplot(CpG.level.raw ~ pheno[,"Smoke"], main="Beta-values Raw", col=c("blue","red"), xaxt="n")
+axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 
 
