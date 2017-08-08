@@ -54,6 +54,8 @@ nCpG
 
 #' First we can run a linear regression on a single CpG that we have already picked
 j <- 19094
+#j <- 468465
+#j <- round(dim(betas.clean)[1]*runif(1,0,1),0)
 CpG.level <- betas.clean[j,]
 CpG.name <- rownames(betas.clean)[j]
 CpG.name
@@ -67,8 +69,8 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],mi
                    SD=round(simplify2array(tapply(CpG.level, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
 #' difference in beta methylation values between Smokers and non smokers
-
-boxplot(CpG.level ~ pheno[,"Smoke"], main="Beta-values", col=c("blue","red"), xaxt="n")
+par(mfrow=c(1,2))
+boxplot(CpG.level ~ pheno[,"Smoke"], main=paste0("Beta-values \n", CpG.name), col=c("blue","red"), xaxt="n", ylim=c(min(CpG.level)-0.1, max(CpG.level)+0.05))
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 #' linear regression on betas
@@ -83,12 +85,10 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"
                    Max=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],max)),3),
                    SD=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
-
-
-boxplot(CpG.level.raw ~ pheno[,"Smoke"], main="Beta-values Raw", col=c("blue","red"), xaxt="n")
+boxplot(CpG.level.raw ~ pheno[,"Smoke"], main=paste0("Raw Beta-values \n", CpG.name), col=c("blue","red"), xaxt="n", ylim=c(min(CpG.level)-0.1, max(CpG.level)+0.05))
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
-
-
+#' linear regression on betas
+summary(lm(CpG.level.raw ~ pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
 #' comparison with m-values
 CpG.mlevel <- log2(betas.clean[j,])-log2(1-betas.clean[j,])
@@ -100,9 +100,9 @@ knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.mlevel, pheno[,"Smoke"],m
                    SD=round(simplify2array(tapply(CpG.mlevel, pheno[,"Smoke"],sd)),3),
                    N=table(pheno[,"Smoke"])))
 par(mfrow=c(1,2))
-boxplot(CpG.level ~ pheno[,"Smoke"], main=paste0("beta-values ", CpG.name), col=c("blue","red"), xaxt="n")
+boxplot(CpG.level ~ pheno[,"Smoke"], main=paste0("Beta-values \n", CpG.name), col=c("blue","red"), xaxt="n")
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
-boxplot(CpG.mlevel ~ pheno[,"Smoke"], main=paste0("M-values ", CpG.name), col=c("blue","red"), xaxt="n")
+boxplot(CpG.mlevel ~ pheno[,"Smoke"], main=paste0("M-values \n", CpG.name), col=c("blue","red"), xaxt="n")
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 
 #' linear regression on m-values
