@@ -79,16 +79,17 @@ summary(lm(CpG.level~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","
 #' what if we use raw beta?
 betas.raw <- getBeta(WB)
 CpG.level.raw <- betas.raw[rownames(betas.raw) == CpG.name, ] #select the same CpG
+#' descriptive stats are different 
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],min)),3),
                    Mean=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],mean)),3), 
                    Median=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],median)),3),
                    Max=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],max)),3),
                    SD=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],sd)),3),
-                   N=table(pheno[,"Smoke"])))
+                   N=table(pheno[,"Smoke"]))) 
 boxplot(CpG.level.raw ~ pheno[,"Smoke"], main=paste0("Raw Beta-values \n", CpG.name), col=c("blue","red"), xaxt="n", ylim=c(min(CpG.level)-0.1, max(CpG.level)+0.05))
 axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
-#' linear regression on betas
-summary(lm(CpG.level.raw ~ pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
+#' linear regression on raw betas
+summary(lm(CpG.level.raw ~ pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")] # results are different
 
 #' comparison with m-values
 CpG.mlevel <- log2(betas.clean[j,])-log2(1-betas.clean[j,])
