@@ -73,7 +73,8 @@ knitr::kable(cpgs[1:4,])
 
 #' Load package for regional analysis "Bumphunter"
 #'  see [Jaffe et al. Int J Epidemiol. 2012](https://www.ncbi.nlm.nih.gov/pubmed/22422453). 
-suppressMessages(library("bumphunter","minfi"))
+suppressMessages(library("bumphunter","minfi","registerDoSEQ"))
+registerDoSEQ()
 #'Create ratioset from clean betas
 data.rs <- RatioSet(Beta = betas.clean,annotation=c(array= "IlluminaHumanMethylationEPIC",  annotation = "ilm10b2.hg19")); # create RatioSet                                                                                      
 data.grs <- mapToGenome(data.rs); # create GenomicRatioSet  
