@@ -199,7 +199,7 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 #' Is the major source of variability associated with position on chip?
 par(mfrow = c(1, 1))
 boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-        ylab = "PC1",las=2, main="Position on chip")
+        ylab = "PC1",las=2, main="Position on chip",col=rainbow(8))
 summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 
 #' ## Removing batch effects using ComBat from the sva package
@@ -215,7 +215,7 @@ PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
 PCs <- PCobject$x
 #' The first PC is no longer associated with sample plate
 boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-        ylab = "PC1",las=2, main="Position on chip")
+        ylab = "PC1",las=2, main="Position on chip",col=rainbow(8))
 summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 #' ComBat removed the apparent batch effect
 #cleanup
@@ -223,12 +223,11 @@ rm(PCs, Mvals, cummvar, PCobject)
 
 #' Phenotype associated with large sources of variability
 #+ fig.width=8, fig.height=6, dpi=300
-plotMDS(betas.rcp, top=10000, gene.selection="common",
+plotMDS(getBeta(WB.noob), top=10000, gene.selection="common",
         pch=17,col=c("deeppink","blue")[factor(pData(WB.noob)$SEX)],
         dim=c(1,2),cex=1.5)
-legend("topright", legend=levels(factor(pData(WB.noob)$SEX)),bty='n',
+legend("center", legend=levels(factor(pData(WB.noob)$SEX)),bty='n',
        cex=1.5,pch=17,col=c("deeppink","blue"))
-
 
 #'## predict sex from methylation
 Gbeta <- mapToGenome(WB)  #map to the genome
