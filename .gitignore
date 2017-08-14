@@ -38,3 +38,6 @@ vignettes/*.pdf
 
 # OS X stuff
 .DS_Store
+
+# GEO downloads
+data/GSE*

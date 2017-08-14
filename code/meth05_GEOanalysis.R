@@ -5,15 +5,15 @@ library(minfi)
 
 # Read about the dataset on https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72556
 
-dir.create("GSE72556")
-setwd("GSE72556")
+dir.create("data/GSE72556")
 
 # Either download manually from https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72556 (look for GSE72556_RAW.tar under supplementary files)
 # or run this command in R
-download.file(url="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE72nnn/GSE72556/suppl/GSE72556_RAW.tar",destfile="GSE72556_RAW.tar")
+download.file(url="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE72nnn/GSE72556/suppl/GSE72556_RAW.tar",
+              destfile="data/GSE72556/GSE72556_RAW.tar")
 
 # Extract the archive, again either manually, or by running 
-untar("GSE72556_RAW.tar")
+untar("data/GSE72556/GSE72556_RAW.tar", exdir = "data/GSE72556")
 
 # Now download the meta data (list of samples and characteristics) from ...
 # https://gbnci-abcc.ncifcrf.gov/geo/
@@ -22,12 +22,12 @@ untar("GSE72556_RAW.tar")
 # Download the .csv file and place it in the same folder.
 
 # Import the .csv file into R. The filename includes the current date, so edit the code below accordingly.
-if(file.exists(list.files(pattern = "GEOmetadb_download.*\\.csv"))){
-    geometafile <- list.files(pattern = "GEOmetadb_download.*\\.csv")
+if(length(list.files(path = "data/GSE72556", pattern = "GEOmetadb_download.*\\.csv")) == 1){
+    geometafile <- list.files(path = "data/GSE72556", pattern = "GEOmetadb_download.*\\.csv", full.names = TRUE)
   } else {
-    warning(paste("did you download the metadata and put it in this directory?", getwd()))
+    warning(paste("did you download the metadata and put it in this directory?", file.path(getwd(), "data/GSE72556/")))
   }
-meta = fread(geometafile, sep=",")
+meta <- fread(geometafile, sep=",")
 
 if(!any(grepl("characteristics", names(meta)))){
   warning("characteristics field is missing - did it get added before download from GEOmetadb?")}
@@ -50,7 +50,7 @@ meta[,child_bmi  :=as.numeric(child_bmi)  ]
 meta[,child_waist:=as.numeric(child_waist)]
 
 # Determine the basenames of the .idat files required for minfi 'read.metharray'
-meta[,basename:=paste0(geo_accession,"_",title)]
+meta[,basename:=paste0("data/GSE72556/", geo_accession, "_", title)]
 
 # Drop all the irrelevant columns
 meta = meta[,list(adult_age,adult_bmi,adult_waist,child_gender,child_age,child_bmi,child_waist,basename)]
