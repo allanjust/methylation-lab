@@ -64,8 +64,7 @@ groups <- colors[1:length(unique(pheno$Smoke))]
 names(groups) <- levels(factor(pheno$Smoke))
 cols <- groups[as.character(factor(pheno$Smoke))]
 samps <- 1:nrow(pheno)
-# draw the plot for the top DMR
-par(mfrow=c(1,1))
+#'Draw the plot for the top DMR
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
          arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=samps)
