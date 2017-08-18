@@ -21,7 +21,6 @@ suppressPackageStartupMessages({
   library(data.table) # for fast aggregation of large data 
   library(qqman) # for visualization of data
   library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # for annotation for Illumina's EPIC methylation arrays
-  library(glmnet) # for elastic net
   library(DMRcate) # for regional analysis
   library(MASS) # for basic statistics
   library(sandwich) # for linear regression (robust sandwich variance estimator)
