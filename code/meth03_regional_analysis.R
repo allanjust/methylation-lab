@@ -10,7 +10,7 @@ if(!exists("pheno")){
 }
 
 #' Load package for regional analysis "DMRcate"
-#'  see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
+#' see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
 #' Other popular options for conducting Regional DNA methylation analysis in R are Aclust and bumphunter 
 suppressMessages(library(DMRcate)) # Popular package for regional DNA methylation analysis
 
@@ -30,11 +30,19 @@ model <- model.matrix(~as.factor(pheno$Smoke)+
 myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
                              what="Beta",design=model, coef=2)
 
+#' Introduction to limma 
+#' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
+suppressMessages(library(limma,minfi))
+EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
+topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
 
 #'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
 model <- model.matrix(~as.factor(pheno$Smoke)+
                       as.factor(pheno$Sex)+
                       as.numeric(pheno$Age))
+
+EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
+topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
 
 myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
                              what="Beta",design=model, coef=2)
