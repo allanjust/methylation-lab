@@ -19,7 +19,7 @@ dir.create("GSE72556")
 meta = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72556&targ=gsm&form=text&view=brief"
 meta = readLines(meta)
 
-# Split into single samples
+# Split into individual samples
 i = which(meta %like% "^\\^SAMPLE = GSM")
 i2 = rep(1:(length(i)-1),times=diff(i))
 i2 = c(i2,rep(length(i),times=length(meta)-i[length(i)]+1))
@@ -45,7 +45,7 @@ meta$variable[i] = map_chr(ch,1)
 meta$value   [i] = map_chr(ch,2)
 rm(ch)
 
-# Find the FTP URLs linking to the two .idat files
+# Find the URLs pointing to the two .idat files
 meta[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
 meta[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
 
