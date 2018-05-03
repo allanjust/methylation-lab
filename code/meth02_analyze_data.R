@@ -11,7 +11,7 @@ knitr::opts_knit$set(root.dir = "../")
 # upload the data 
 load("~/BootCamp_Epigenetics/Data/WB.noob.RData") # phenotype data
 dim(WB.noob)
-cellprop<-read.csv("~/BootCamp_Epigenetics/Data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
+cellprop<-read.csv("data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
 load("~/BootCamp_Epigenetics/Data/betas.rcp.RData") # processed betas
 load("~/BootCamp_Epigenetics/Data/Gbeta.RData") # annotation file
 
