@@ -4,7 +4,7 @@
 #'   
 
 #'## It is important that you have already updated R
-#'you should be running version 3.4.1
+#'you should be running version 3.5.0
 R.version$version.string   
 #' this is because many packages update and change to fix bugs and add new features.  
 
@@ -14,16 +14,17 @@ update.packages()
 
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
-methpackagesCRAN <- c("Rcpp","openssl","CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape","glmnet","statmod",
+
+methpackagesCRAN <- c("Rcpp","openssl","CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape","glmnet","statmod","XML",
                       "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest","foreach", "stringi","doParallel")
-methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix",
+methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix","IlluminaHumanMethylation450kanno.ilmn12.hg19",
                       "IlluminaHumanMethylation450kmanifest", "IlluminaHumanMethylationEPICmanifest",
                       "sva", "IlluminaHumanMethylationEPICanno.ilm10b2.hg19", 
-                      "DMRcate", "shinyMethyl","bumphunter")
+                      "DMRcate", "shinyMethyl","bumphunter","wateRmelon","FDb.InfiniumMethylation.hg19")
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
-  install.packages(toinstallCRAN)
+  install.packages(toinstallCRAN,dependencies=TRUE)
   cat("finished installing new packages from CRAN\n")
 } else cat("packages we need from CRAN are already installed\n")
 #' install these from BioConductor:
@@ -38,7 +39,7 @@ if(length(toinstallBioC >= 1)) {
 if(!all(c(toinstallBioC, toinstallCRAN) %in% installed.packages()[,1])) stop(
   "required packages not installed - please retry script carefully making sure you have already updated R and work through any error messages")
 
-if(!as.numeric(sub("\\.[0-9]$", "", installed.packages()["minfi","Version"])) >= 1.22) stop(
+if(!as.numeric(sub("\\.[0-9]$", "", installed.packages()["minfi","Version"])) >= 1.24) stop(
   "you don't have the minfi version needed for this workshop")
 
 #' Session Information
