@@ -93,12 +93,12 @@ WB.noob
 #' and see that the preprocessing changed them:
 # first three CpGs on the first three samples
 # raw RGset
-print(getBeta(WB)[1:3,1:3], digits = 2)
+print(minfi::getBeta(WB)[1:3,1:3], digits = 2)
 # after preprocessing
 print(getBeta(WB.noob)[1:3,1:3], digits = 2)
 #' and we can check that
 #' the dimensions of the beta matrices are unchanged
-identical(dim(getBeta(WB)), dim(getBeta(WB.noob)))
+identical(dim(minfi::getBeta(WB)), dim(getBeta(WB.noob)))
 
 #' Distribution of beta-values: before and after normalization
 #+ fig.width=8, fig.height=6, dpi=300
@@ -236,9 +236,13 @@ getSex(Gbeta)
 #' we see that our predictions match the phenodata
 table(pData(WB)$SEX,getSex(Gbeta)$predictedSex)
 #' We can actually look at the intensities in the sex-crhomosomes
-plotSex(getSex(Gbeta, cutoff = -2),id=pData(WB)$SEX)
+Gbeta = addSex(Gbeta)
+plotSex(Gbeta,id=pData(WB)$SEX)
 # cleanup
 
+save(WB,WB.noob,file="~/BootCamp_Epigenetics/Data/WB.noob.RData")
+save(betas.rcp,file="~/BootCamp_Epigenetics/Data/betas.rcp.RData")
+save(Gbeta,file="~/BootCamp_Epigenetics/Data/Gbeta.RData")
 
 #' # memory usage
 #' as a reminder - these are large datasets and we are working in RAM.  
