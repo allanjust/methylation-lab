@@ -32,8 +32,8 @@ library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # annotation for Illumina
 #library(EPICdemo) # example dataset - not a publically available package
 
 #' import EPIC data from a sample sheet and idat files
-idatPath <- "~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata" # path of the folder
-targets <- read.csv("~/BootCamp_Epigenetics/Data/EPICdemo/inst/extdata/sample.info.csv", strip.white=T, stringsAsFactors=F) #sample information
+idatPath <- "C:/EBC3/idat" # path of the folder
+targets <- read.csv("C:/EBC3/idat/sample.info.csv", strip.white=T, stringsAsFactors=F) #sample information
 targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position) # name of the files
 WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T) # read the idat file one by one 
 ncol(WB)
@@ -61,11 +61,12 @@ pData(WB)[,1:7]
 #' Estimating proportions of 6 cell types found in peripheral blood 
 #'  _This next command is commented out because it requires >4GB of RAM_  
 #'  if you don't have that - you can load the presaved output below
-# cellprop <- estimateCellCounts(WB, compositeCellType = "Blood",
-#   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran"))
+ cellprop <- estimateCellCounts(WB, compositeCellType = "Blood",
+   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran"))
+rm(FlowSorted.Blood.450k);gc()
 # write.csv(cellprop, file = "data/cellprop_WB_20samps_EPICdemo.csv", row.names = F)
 #' read in the estimated cell proportions:
-cellprop <- read.csv("data/cellprop_WB_20samps_EPICdemo.csv")
+#'cellprop <- read.csv("data/cellprop_WB_20samps_EPICdemo.csv")
 #' Here are the estimates
 #+ cellprop, results = "asis"
 knitr::kable(cellprop, digits = 2)
@@ -74,9 +75,9 @@ summary(rowSums(cellprop))
 #'Distribution of estimated cell types
 boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %",main="Cell type distribution")
 #'Distribution of estimated cell types by smoking status
-meltData <- melt(cbind(cellprop*100,pData(WB)$SMOKE_STATUS))
+meltData <- melt(cbind(as.data.frame(cellprop*100),pData(WB)$SMOKE_STATUS))
 names(meltData)[1:3]<-c('Smoking','Celltype','Proportion')
-boxplot(Proportion ~Smoking+Celltype, data=meltData,col=c("blue","red"),xaxt="n",main="Cell type distribution by smoking status")
+boxplot(as.numeric(as.character(Proportion)) ~Smoking+Celltype, data=meltData,col=c("blue","red"),xaxt="n",main="Cell type distribution by smoking status")
 axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=c(colnames(cellprop)))
 legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=c("blue","red"),cex=1.3)
 
@@ -242,9 +243,9 @@ Gbeta = addSex(Gbeta)
 plotSex(Gbeta,id=pData(WB)$SEX)
 # cleanup
 
-save(WB,WB.noob,file="~/BootCamp_Epigenetics/Data/WB.noob.RData")
-save(betas.rcp,file="~/BootCamp_Epigenetics/Data/betas.rcp.RData")
-save(Gbeta,file="~/BootCamp_Epigenetics/Data/Gbeta.RData")
+save(WB,WB.noob,file="C:/EBC3/Data/WB.noob.RData")
+save(betas.rcp,file="C:/EBC3/Data/betas.rcp.RData")
+save(Gbeta,file="C:/EBC3/Data/Gbeta.RData")
 
 #' # memory usage
 #' as a reminder - these are large datasets and we are working in RAM.  

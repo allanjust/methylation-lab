@@ -6,11 +6,13 @@
 #'## It is important that you have already updated R
 #'you should be running version 3.5.0
 R.version$version.string   
-#' this is because many packages update and change to fix bugs and add new features.  
+#' this is because many packages update and change to fix bugs and add new features.
+#' Local library   
+.libPaths("C:/EBC3/Rpackages")
 
 #' Please consider updating your packages
 #' this step requires agreeing for each update (y for yes)
-update.packages()
+update.packages(lib.loc="C:/EBC3/Rpackages")
 
 #'# Installation of new packages   
 #' vector of packages we will need if not yet installed:
@@ -24,14 +26,14 @@ methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix","I
 #' install these from CRAN:
 toinstallCRAN <- setdiff(methpackagesCRAN, installed.packages()[,1])
 if(length(toinstallCRAN >= 1)) {
-  install.packages(toinstallCRAN,dependencies=TRUE)
+  install.packages(toinstallCRAN,dependencies=TRUE, lib="C:/EBC3/Rpackages")
   cat("finished installing new packages from CRAN\n")
 } else cat("packages we need from CRAN are already installed\n")
 #' install these from BioConductor:
 toinstallBioC <- setdiff(methpackagesBioC, installed.packages()[,1])
 if(length(toinstallBioC >= 1)) {
   source("https://bioconductor.org/biocLite.R")
-  biocLite(toinstallBioC, suppressUpdates = T)
+  biocLite(toinstallBioC, suppressUpdates = T,lib="C:/EBC3/Rpackages")
   cat("finished installing new packages from BioConductor\n")
 } else cat("packages we need from BioConductor are already installed\n")
 
