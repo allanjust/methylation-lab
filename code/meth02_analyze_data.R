@@ -8,12 +8,12 @@ knitr::opts_knit$set(root.dir = "../")
 #if(!exists("WB.noob")){
 #  source("code/meth01_process_data.R")
 #}
-# upload the data 
-load("~/BootCamp_Epigenetics/Data/WB.noob.RData") # phenotype data
+# upload the data
+load("C:/EBC3/Data/WB.noob.RData") # phenotype data
 dim(WB.noob)
-cellprop<-read.csv("data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
-load("~/BootCamp_Epigenetics/Data/betas.rcp.RData") # processed betas
-load("~/BootCamp_Epigenetics/Data/Gbeta.RData") # annotation file
+cellprop<-read.csv("C:/EBC3/methylation-lab/data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
+load("C:/EBC3/Data/betas.rcp.RData") # processed betas
+load("C:/EBC3/Data/Gbeta.RData") # annotation file
 
 #' load packages
 suppressPackageStartupMessages({
@@ -76,7 +76,7 @@ axis(1,at=c(1,2),adj=1,labels=cbind("Non-smoker","Smoker"))
 summary(lm(CpG.level~pheno[,"Smoke"]))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
 
 #' what if we use raw beta?
-betas.raw <- getBeta(WB)
+betas.raw <- minfi::getBeta(WB)
 CpG.level.raw <- betas.raw[rownames(betas.raw) == CpG.name, ] #select the same CpG
 #' descriptive stats are different 
 knitr::kable(cbind(Min=round(simplify2array(tapply(CpG.level.raw, pheno[,"Smoke"],min)),3),
