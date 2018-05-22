@@ -6,7 +6,9 @@
 #'## It is important that you have already updated R
 #'you should be running version 3.5.0
 R.version$version.string   
-#' this is because many packages update and change to fix bugs and add new features.  
+#' this is because many packages update and change to fix bugs and add new features.
+#' Local library   
+.libPaths("C:/EBC3/Rpackages")
 
 #' Please consider updating your packages
 #' this step requires agreeing for each update (y for yes)
