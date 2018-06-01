@@ -146,7 +146,7 @@ nrow(WB.noob)
 WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
 nrow(WB.noob)
 # cleanup
-rm(intersect, detect.p)
+rm(intersect, detect.p);gc()
 
 #' #Probe type adjustment  
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes  

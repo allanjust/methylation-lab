@@ -102,6 +102,38 @@ dmrs.10 <- bumphunter(data.grs, design = model, coef=2,nullMethod="bootstrap",cu
 #'Look at top DMRs
 dmrs.10$table[1:4,]
 
+#'Load package for Age-Prediction
+library(wateRmelon)
+DNAmAge<-as.vector(agep(betas.rcp))
+
+#'Agreement between chronological age and DNAm-Age
+pheno$Age<-as.numeric(as.character(pheno$Age))
+cbind(DNAmAge,pheno$Age,pheno$Smoke)
+
+#' Correlation
+cor.test(DNAmAge,as.numeric(as.character(pheno$Age)))
+plot(pheno$Age,DNAmAge,pch=21,ylab="Age Predicted",
+     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
+legend("topleft",legend=c("r=",paste(round(cor(DNAmAge,pheno$Age),2))),bty="n")
+abline(lm(DNAmAge~pheno$Age),col="red",lw=2)
+
+
+#' Age Acceleration Residuals
+AgeAccelerationResidual<-residuals(lm(DNAmAge~pheno$Age))
+boxplot(AgeAccelerationResidual ~pheno$Smoke, col=c("red","blue"))
+wilcox.test(AgeAccelerationResidual ~ pheno$Smoke)
+t.test(AgeAccelerationResidual ~ pheno$Smoke)
+
+
+#' Online Calculator
+Horvath<-read.csv("C:/EBC3/methylation-lab/data/EpigeneticAge/MethylationData.output.csv")
+cor.test(Horvath$DNAmAge,as.numeric(as.character(pheno$Age)))
+plot(pheno$Age,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
+     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
+legend("topleft",legend=c("r=",paste(round(cor(Horvath$DNAmAge,pheno$Age),2))),bty="n")
+abline(lm(Horvath$DNAmAge~pheno$Age),col="red",lw=2)
+
+
 
 #' End of script 03
 #' 
