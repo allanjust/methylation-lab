@@ -165,7 +165,7 @@ nrow(WB.noob)
 WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
 nrow(WB.noob)
 # cleanup
-rm(intersect, detect.p)
+rm(intersect, detect.p);gc()
 
 #' #Probe type adjustment  
 #' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes  
@@ -228,7 +228,7 @@ summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
 # First we convert from beta-values to M-values
 Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
 #' ComBat eBayes adjustment using a known variable of interest (here we use row)
-Mvals.ComBat <- ComBat.mc(Mvals, batch = pData(WB.noob)$Array,nCores = detectCores()-1)
+Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Array)
 # Convert M-values back to beta-values
 betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
 
@@ -274,5 +274,3 @@ pryr::mem_used()
 memory.size(max = T)
 
 #' End of script 1
-#' 
-

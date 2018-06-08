@@ -9,15 +9,12 @@ knitr::opts_knit$set(root.dir = "../")
 #  source("code/meth01_process_data.R")
 #}
 
-### load the data 
-load("~/BootCamp_Epigenetics/Data/WB.noob.RData") # phenotype data
+# load the data
+load("C:/EBC3/Data/WB.noob.RData") # phenotype data
 dim(WB.noob)
-
-# cell type composition
-cellprop<-read.csv("Data/cellprop_WB_20samps_EPICdemo.csv")
-
+cellprop<-read.csv("Data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
 load("C:/EBC3/Data/betas.rcp.RData") # processed betas
-load("C:/EBC3/Data/Gbeta.RData")     # annotation file
+load("C:/EBC3/Data/Gbeta.RData") # annotation file
 
 #' load packages
 suppressPackageStartupMessages({
