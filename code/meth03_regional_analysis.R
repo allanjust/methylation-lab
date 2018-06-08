@@ -16,14 +16,8 @@ suppressMessages(library(DMRcate)) # Popular package for regional DNA methylatio
 
 
 #' First we need to define a model
-model <- model.matrix(~as.factor(pheno$Smoke)+
-                      as.factor(pheno$Sex)+
-                      as.numeric(pheno$Age)+
-                      as.numeric(pheno$CD8T)+
-                      as.numeric(pheno$NK)+
-                      as.numeric(pheno$Bcell)+
-                      as.numeric(pheno$Mono)+
-                      as.numeric(pheno$Gran))
+model = model.matrix( ~SMOKE_STATUS+SEX+AGE+CD8T+NK+Bcell+Mono+Gran,data=pheno )
+
 
 #'Regions are now agglomerated from groups of significant probes 
 #'Let's run the regional analysis using the Beta-values from our preprocessed data
@@ -37,9 +31,7 @@ EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
 topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
 
 #'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
-model <- model.matrix(~as.factor(pheno$Smoke)+
-                      as.factor(pheno$Sex)+
-                      as.numeric(pheno$Age))
+model = model.matrix( ~SMOKE_STATUS+SEX+AGE,data=pheno )
 
 EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
 topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
@@ -65,26 +57,29 @@ results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
 #' if you are interested in plotting genomic data the Gviz is extremely useful
 #'Let's look at the first region
 results.ranges[1]
-pheno$Smoke <- ifelse(pheno$Smoke==1, "Smoker", "Non-Smoker")
+
 # set up the grouping variables and colours
-colors<-c("magenta","red")
-groups <- colors[1:length(unique(pheno$Smoke))]
-names(groups) <- levels(factor(pheno$Smoke))
-cols <- groups[as.character(factor(pheno$Smoke))]
-samps <- 1:nrow(pheno)
+cols = c("magenta","red")[pheno$SMOKE_STATUS]
+names(cols) = levels(pheno$SMOKE_STATUS)[pheno$SMOKE_STATUS]
+
 #'Draw the plot for the top DMR
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
          arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
-         genome="hg19", samps=samps)
+         genome="hg19", samps=1:nrow(pheno))
 
 
 #'Extracting CpGs-names and locations
-chr <- gsub(":.*", "", dmrcoutput.smoking$results$coord[1])
-start <- gsub("-.*", "", gsub(".*:", "", dmrcoutput.smoking$results$coord[1]))
-end <- gsub(".*-", "", dmrcoutput.smoking$results$coord[1])
+coord = dmrcoutput.smoking$results$coord[1]
+coord = stri_match(coord,regex="^(chr.+):(\\d+)-(\\d+)$")
+
+chr = coord[2]
+start = as.integer(coord[3])
+end = as.integer(coord[4])
+
 #'CpG ID and individual metrics
-cpgs <- dmrcoutput.smoking$input[dmrcoutput.smoking$input$CHR %in% chr & dmrcoutput.smoking$input$pos >= start & dmrcoutput.smoking$input$pos <=end,]
-knitr::kable(cpgs[1:4,])
+
+cpgs = subset(dmrcoutput.smoking$input, CHR == chr & pos >= start & pos <= end)
+knitr::kable(cpgs)
 
 #' Load package for regional analysis "Bumphunter"
 #'  see [Jaffe et al. Int J Epidemiol. 2012](https://www.ncbi.nlm.nih.gov/pubmed/22422453). 
@@ -97,7 +92,6 @@ data.grs <- mapToGenome(data.rs); # create GenomicRatioSet
 
 #'Bumphunter using 14% DNAm difference
 Cores<-detectCores()
-registerDoParallel(cores = Cores-1)
 dmrs.10 <- bumphunter(data.grs, design = model, coef=2,nullMethod="bootstrap",cutoff = 0.14, B=10, type="Beta") # 29 bumps at 20% difference in methylation
 #'Look at top DMRs
 dmrs.10$table[1:4,]

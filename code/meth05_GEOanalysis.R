@@ -20,16 +20,12 @@ meta = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE72556&targ=gsm&for
 meta = readLines(meta)
 
 # Split into individual samples
-i = which(meta %like% "^\\^SAMPLE = GSM")
-i2 = rep(1:(length(i)-1),times=diff(i))
-i2 = c(i2,rep(length(i),times=length(meta)-i[length(i)]+1))
-meta = split(meta,i2)
-rm(i,i2)
+meta = split(meta,cumsum(meta %like% "^\\^SAMPLE = GSM"))
 
 # Extract GSM accessions
-accessions = map(meta,1) %>% stri_match_first(regex="GSM\\d+")
-names(meta) = accessions; rm (accessions)
+names(meta) = map(meta,1) %>% stri_match_first(regex="GSM\\d+")
 
+# Parse meta data
 imap(meta,function(s,acc){
 	s = strsplit(s,split=" = ",fixed=TRUE)	
 	data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
@@ -56,11 +52,8 @@ meta = dcast(meta, gsm ~ variable)
 meta = meta[1:10]
 
 # Download .idat files
-lapply(meta$red,function(file) download.file(url=file,dest=file.path("GSE72556",basename(file)) ))
-lapply(meta$grn,function(file) download.file(url=file,dest=file.path("GSE72556",basename(file)) ))
-
-# File path for read.metharray
-meta[,file:=file.path("GSE72556",basename(red)) %>% stri_sub(1,-13)]
+map2(meta$red, "GSE72556/" %s+% meta$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
+map2(meta$grn, "GSE72556/" %s+% meta$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
 meta$red = NULL; meta$grn = NULL
 
 # Type casting
@@ -73,7 +66,7 @@ meta$`child waist`  %<>% as.numeric
 meta$`child gender` %<>% factor
 
 # Import the methylation data
-rgset = read.metharray(meta$file)
+rgset = read.metharray("GSE72556/" %s+% meta$gsm)
 
 # Usually we should normalize the data, but we skip this step for now to save time
 beta = getBeta(preprocessRaw(rgset)) 

@@ -115,14 +115,33 @@ legend("topleft", c("Noob","Raw"),
 
 #' the use of a density plot may give the impression of values outside (0,1)  
 #' but let's check:
-print(colRanges(getBeta(WB), na.rm = T), digits = 2)
+print(colRanges(minfi::getBeta(WB), na.rm = T), digits = 2)
 print(colRanges(getBeta(WB.noob)), digits = 2)
 #' we confirm that plot tails were an artifact of applying a continuous distribution  
 #'  (in estimating the density function)
 
+# library(ewastools)
+# detP2 = detectionP.minfi(WB,type="negative")
+# chrY = which(getAnnotation(WB)@listData$chr == "chrY")
+# detP2 = detP2[chrY,]
+# detP2 = log10(detP2)
+# sexes = split(1:20,pData(WB)$SEX)
+# cutoffs = -(0:16)
+
+# tmp = sapply(cutoffs,function(t){ colSums(detP2<t,na.rm=TRUE) })
+# sexes$male   = apply(tmp[sexes$male  ,],2,median)
+# sexes$female = apply(tmp[sexes$female,],2,median)
+
+# plot  (-cutoffs,sexes$female,ylim=c(0,nrow(detP2)),ylab="# chrY probes detected",xlab="p-value cutoff",xaxt="n",yaxt="n")
+# points(-cutoffs,sexes$male,pch=3)
+# axis(1,at=c(0,2,5,10,15),labels=c("1","0.01","1e-5","1e-10","1e-15"))
+# axis(2,at=c(0,100,200,300,400,500,561),labels=c(0,100,200,300,400,500,561))
+# legend("center",pch=c(3,1),legend=c('Male','Female'),bty="n")
+# detach("package:ewastools")
+
 #' ## probe failures due to low intensities  
 #' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
-detect.p <- detectionP(WB, type = "m+u")
+detect.p <- minfi::detectionP(WB, type = "m+u")
 #' Let's look at the median detection P-values
 #+ fig.width=8, fig.height=6, dpi=300
 barplot(colMeans(detect.p), col=rainbow(dim(detect.p)[2]), las=2, 
@@ -255,4 +274,3 @@ pryr::mem_used()
 memory.size(max = T)
 
 #' End of script 1
-#' 
