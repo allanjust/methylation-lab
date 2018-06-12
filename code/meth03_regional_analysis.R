@@ -101,31 +101,29 @@ library(wateRmelon)
 DNAmAge<-as.vector(agep(betas.rcp))
 
 #'Agreement between chronological age and DNAm-Age
-pheno$Age<-as.numeric(as.character(pheno$Age))
-cbind(DNAmAge,pheno$Age,pheno$Smoke)
 
 #' Correlation
-cor.test(DNAmAge,as.numeric(as.character(pheno$Age)))
-plot(pheno$Age,DNAmAge,pch=21,ylab="Age Predicted",
+cor.test(DNAmAge,pheno$AGE)
+plot(pheno$AGE,DNAmAge,pch=21,ylab="Age Predicted",
      xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
-legend("topleft",legend=c("r=",paste(round(cor(DNAmAge,pheno$Age),2))),bty="n")
-abline(lm(DNAmAge~pheno$Age),col="red",lw=2)
+legend("topleft",legend=paste0("r=",round(cor(DNAmAge,pheno$AGE),2)),bty="n")
+abline(lm(DNAmAge~pheno$AGE),col="red",lw=2)
 
 
 #' Age Acceleration Residuals
-AgeAccelerationResidual<-residuals(lm(DNAmAge~pheno$Age))
-boxplot(AgeAccelerationResidual ~pheno$Smoke, col=c("red","blue"))
-wilcox.test(AgeAccelerationResidual ~ pheno$Smoke)
-t.test(AgeAccelerationResidual ~ pheno$Smoke)
+AgeAccelerationResidual<-residuals(lm(DNAmAge~pheno$AGE))
+boxplot(AgeAccelerationResidual ~pheno$SMOKE_STATUS, col=c("red","blue"))
+wilcox.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
+t.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
 
 
 #' Online Calculator
-Horvath<-read.csv("C:/EBC3/methylation-lab/data/EpigeneticAge/MethylationData.output.csv")
-cor.test(Horvath$DNAmAge,as.numeric(as.character(pheno$Age)))
-plot(pheno$Age,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
+Horvath<-read.csv("C:/EBC3/data/EpigeneticAge/MethylationData.output.csv")
+cor.test(Horvath$DNAmAge,pheno$AGE)
+plot(pheno$AGE,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
      xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
-legend("topleft",legend=c("r=",paste(round(cor(Horvath$DNAmAge,pheno$Age),2))),bty="n")
-abline(lm(Horvath$DNAmAge~pheno$Age),col="red",lw=2)
+legend("topleft",legend=paste0("r=",round(cor(Horvath$DNAmAge,pheno$AGE),2)),bty="n")
+abline(lm(Horvath$DNAmAge~pheno$AGE),col="red",lw=2)
 
 
 
