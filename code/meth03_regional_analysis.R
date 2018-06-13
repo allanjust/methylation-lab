@@ -118,7 +118,7 @@ t.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
 
 
 #' Online Calculator
-Horvath<-read.csv("C:/EBC3/data/EpigeneticAge/MethylationData.output.csv")
+Horvath<-read.csv("C:/EBC3/Data/MethylationData.output.csv")
 cor.test(Horvath$DNAmAge,pheno$AGE)
 plot(pheno$AGE,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
      xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
