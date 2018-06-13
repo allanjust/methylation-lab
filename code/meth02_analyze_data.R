@@ -2,6 +2,8 @@
 #' Using data preprocessed in our script:  
 #'  meth01_process_data.R  
 #+ setdir02, echo = F
+#' Local library
+.libPaths("C:/EBC3/Rpackages")
 knitr::opts_knit$set(root.dir = "../")
 
 #' we have a processed dataset with 15 samples (otherwise we run script 01)
@@ -10,9 +12,10 @@ knitr::opts_knit$set(root.dir = "../")
 #}
 
 # load the data
+library(minfi)
 load("C:/EBC3/Data/WB.noob.RData") # phenotype data
 dim(WB.noob)
-cellprop<-read.csv("Data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
+cellprop<-read.csv("C:/EBC3/methylation-lab/data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
 load("C:/EBC3/Data/betas.rcp.RData") # processed betas
 load("C:/EBC3/Data/Gbeta.RData") # annotation file
 

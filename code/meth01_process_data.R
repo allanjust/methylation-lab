@@ -5,6 +5,8 @@
 #' geometry: margin=2cm
 #' number_sections: true
 #' ---
+#' Local library
+.libPaths("C:/EBC3/Rpackages")
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
@@ -13,8 +15,6 @@ knitr::opts_knit$set(root.dir = "../")
 
 #' Load packages that we will use focusing on *minfi*:  
 #'  see [Aryee et al. Bioinformatics 2014](http://doi.org/10.1093/bioinformatics/btu049).
-#' Local library   
-.libPaths("C:/EBC3/Rpackages")
 #' Other popular options for processing & analyzing methylation data include RnBeads and methylumi
 suppressMessages(library(minfi)) # popular package for methylation data
 library(shinyMethyl) # for visualizing quality control
