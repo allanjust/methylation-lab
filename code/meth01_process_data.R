@@ -120,24 +120,61 @@ print(colRanges(getBeta(WB.noob)), digits = 2)
 #' we confirm that plot tails were an artifact of applying a continuous distribution  
 #'  (in estimating the density function)
 
-# library(ewastools)
-# detP2 = detectionP.minfi(WB,type="negative")
-# chrY = which(getAnnotation(WB)@listData$chr == "chrY")
-# detP2 = detP2[chrY,]
-# detP2 = log10(detP2)
-# sexes = split(1:20,pData(WB)$SEX)
-# cutoffs = -(0:16)
 
-# tmp = sapply(cutoffs,function(t){ colSums(detP2<t,na.rm=TRUE) })
-# sexes$male   = apply(tmp[sexes$male  ,],2,median)
-# sexes$female = apply(tmp[sexes$female,],2,median)
+detectionP.minfi <- function(rgSet) {
+    minfi:::.isRGOrStop(rgSet)
+    locusNames <- getManifestInfo(rgSet, "locusNames")
+    detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
+                   dimnames = list(locusNames, colnames(rgSet)))
 
-# plot  (-cutoffs,sexes$female,ylim=c(0,nrow(detP2)),ylab="# chrY probes detected",xlab="p-value cutoff",xaxt="n",yaxt="n")
-# points(-cutoffs,sexes$male,pch=3)
-# axis(1,at=c(0,2,5,10,15),labels=c("1","0.01","1e-5","1e-10","1e-15"))
-# axis(2,at=c(0,100,200,300,400,500,561),labels=c(0,100,200,300,400,500,561))
-# legend("center",pch=c(3,1),legend=c('Male','Female'),bty="n")
-# detach("package:ewastools")
+    r <- minfi::getRed(rgSet)
+    g <- minfi::getGreen(rgSet)
+
+    controlIdx <- minfi::getControlAddress(rgSet, controlType = "NEGATIVE")   
+    
+    rBg <- r[controlIdx,,drop=FALSE]
+    rMu <- matrixStats::colMedians(rBg)
+    rSd <- matrixStats::colMads(rBg)
+
+    gBg <- g[controlIdx,,drop=FALSE]
+    gMu <- matrixStats::colMedians(gBg)
+    gSd <- matrixStats::colMads(gBg)
+    
+    TypeII <- minfi::getProbeInfo(rgSet, type = "II")
+    TypeI.Red <- minfi::getProbeInfo(rgSet, type = "I-Red")
+    TypeI.Green <- minfi::getProbeInfo(rgSet, type = "I-Green")
+
+    for (i in 1:ncol(rgSet)) {   
+        ## Type I Red
+        intensity <- r[TypeI.Red$AddressA, i] + r[TypeI.Red$AddressB, i]
+        detP[TypeI.Red$Name, i] <- pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
+        ## Type I Green
+        intensity <- g[TypeI.Green$AddressA, i] + g[TypeI.Green$AddressB, i]
+        detP[TypeI.Green$Name, i] <- pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
+        ## Type II
+        intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
+        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),log.p=TRUE,lower.tail=FALSE)
+    }
+    
+  detP/log(10)
+}
+
+detP = detectionP.minfi(WB)
+chrY = which(getAnnotation(WB)@listData$chr == "chrY")
+detP = detP[chrY,]
+sexes = split(1:20,pData(WB)$SEX)
+cutoffs = -(0:16)
+
+tmp = sapply(cutoffs,function(t){ colSums(detP<t,na.rm=TRUE) })
+sexes$male   = apply(tmp[sexes$male  ,],2,median)
+sexes$female = apply(tmp[sexes$female,],2,median)
+
+plot  (-cutoffs,sexes$female,ylim=c(0,nrow(detP)),ylab="# chrY probes detected",xlab="p-value cutoff",xaxt="n",yaxt="n")
+points(-cutoffs,sexes$male,pch=3)
+axis(1,at=c(0,2,5,10,15),labels=c("1","0.01","1e-5","1e-10","1e-15"))
+axis(2,at=c(0,100,200,300,400,500,561),labels=c(0,100,200,300,400,500,561))
+legend("center",pch=c(3,1),legend=c('Male','Female'),bty="n")
+
 
 #' ## probe failures due to low intensities  
 #' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
