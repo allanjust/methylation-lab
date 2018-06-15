@@ -16,7 +16,7 @@ suppressMessages(library(DMRcate)) # Popular package for regional DNA methylatio
 
 
 #' First we need to define a model
-model = model.matrix( ~SMOKE_STATUS+SEX+AGE+CD8T+NK+Bcell+Mono+Gran,data=pheno )
+model = model.matrix( ~SMOKE_STATUS+SEX+AGE+CD8T+NK+Bcell+Mono+Gran,data=pheno)
 
 
 #'Regions are now agglomerated from groups of significant probes 
@@ -80,21 +80,6 @@ end = as.integer(coord[4])
 
 cpgs = subset(dmrcoutput.smoking$input, CHR == chr & pos >= start & pos <= end)
 knitr::kable(cpgs)
-
-#' Load package for regional analysis "Bumphunter"
-#'  see [Jaffe et al. Int J Epidemiol. 2012](https://www.ncbi.nlm.nih.gov/pubmed/22422453). 
-suppressMessages(library("bumphunter","minfi","registerDoSEQ","doParallel"))
-registerDoSEQ()
-#'Create ratioset from clean betas
-data.rs <- RatioSet(Beta = betas.clean,annotation=c(array= "IlluminaHumanMethylationEPIC",  annotation = "ilm10b2.hg19")); # create RatioSet                                                                                      
-data.grs <- mapToGenome(data.rs); # create GenomicRatioSet  
-
-
-#'Bumphunter using 14% DNAm difference
-Cores<-detectCores()
-dmrs.10 <- bumphunter(data.grs, design = model, coef=2,nullMethod="bootstrap",cutoff = 0.14, B=10, type="Beta") # 29 bumps at 20% difference in methylation
-#'Look at top DMRs
-dmrs.10$table[1:4,]
 
 #'Load package for Age-Prediction
 library(wateRmelon)

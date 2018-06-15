@@ -218,6 +218,6 @@ manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG",
           main = "Manhattan Plot \n adjusted for cell proportions",ylim=c(0,8))
 
 #' cleanup
-rm(nCpG, CpG.name, CpG.level, CpG.mlevel, datamanhat, IlluminaAnnot,lambda)
+rm(nCpG, CpG.name, CpG.level, CpG.mlevel, datamanhat, IlluminaAnnot,lambda);gc()
 #' End of script 02
 #'  
