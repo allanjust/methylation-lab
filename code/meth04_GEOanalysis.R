@@ -1,11 +1,15 @@
 #'# Example of using a GEO dataset (450k)
 
+lapply(paste('package:',names(sessionInfo()$otherPkgs),sep=""),detach,character.only=TRUE,unload=TRUE)
+
+.libPaths("C:/EBC3/Rpackages")
+
 library(utils)
-library(data.table)
 library(stringi)
 library(minfi)
 library(purrr)
 library(magrittr)
+library(data.table)
 
 # Investigating a 450k dataset from [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) by NCBI
 # another great option is [ArrayExpress](https://www.ebi.ac.uk/arrayexpress/browse.html) from the European EMBL-EBI 
