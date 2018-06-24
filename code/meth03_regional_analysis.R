@@ -62,10 +62,14 @@ results.ranges[1]
 cols = c("magenta","red")[pheno$SMOKE_STATUS]
 names(cols) = levels(pheno$SMOKE_STATUS)[pheno$SMOKE_STATUS]
 
-#'Draw the plot for the top DMR
+#'Draw the plot for the top DMR\
+#+ fig.width=8, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
          arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
+
+#' cleanup
+rm(tx.hg19,tx.hg38,tx.mm10,snpsall,myBetas,myannotation,crosshyb,XY.probes);gc()
 
 
 #'Extracting CpGs-names and locations
@@ -83,7 +87,7 @@ knitr::kable(cpgs)
 
 #'Load package for Age-Prediction
 library(wateRmelon)
-DNAmAge<-as.vector(agep(betas.rcp))
+DNAmAge<-as.vector(agep(betas.clean))
 
 #'Agreement between chronological age and DNAm-Age
 
@@ -111,6 +115,4 @@ legend("topleft",legend=paste0("r=",round(cor(Horvath$DNAmAge,pheno$AGE),2)),bty
 abline(lm(Horvath$DNAmAge~pheno$AGE),col="red",lw=2)
 
 
-
 #' End of script 03
-#' 

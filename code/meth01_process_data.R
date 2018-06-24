@@ -1,7 +1,7 @@
 #' ---
 #' title: "Processing, analyzing, and interpreting epigenome-wide DNA methylation data"
-#' author: "Andrea Baccarelli, Andres Cardena, Elena Colicino, Cavin Ward-Caviness, Allan Just"
-#' date: "June, 2017"
+#' author: "Andrea Baccarelli, Andres Cardena, Elena Colicino, Jonathan Heiss, Allan Just"
+#' date: "June, 2018"
 #' geometry: margin=2cm
 #' number_sections: true
 #' ---
