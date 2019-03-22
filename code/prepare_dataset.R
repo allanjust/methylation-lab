@@ -75,17 +75,17 @@ pheno = pheno[c(
 )]
 
 # Download .idat files
-map2(pheno$red,pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(pheno$grn,pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+map2(pheno$red,"data/" %s+% pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
+map2(pheno$grn,"data/" %s+% pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
 pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
-meth = read_idats(pheno$gsm)
+meth = read_idats("data/" %s+% pheno$gsm)
 pheno[,c("X","Y"):=check_sex(meth)]
 pheno[,sex:=ifelse(X>1.,"f","m")]
 
 pheno = pheno[,.(gsm,sex,smoker)]
 pheno[gsm=="GSM2260573",sex:="f"]
 
-write.csv(pheno,file="pheno.csv",row.names=FALSE)
-write.csv(pheno[1:30],file="pheno_clean.csv",row.names=FALSE)
+write.csv(pheno,file="data/pheno.csv",row.names=FALSE)
+write.csv(pheno[1:30],file="data/pheno_clean.csv",row.names=FALSE)
