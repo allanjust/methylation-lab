@@ -74,6 +74,8 @@ pheno = pheno[c(
 ,"GSM2260573" # sample for which we'll change sex
 )]
 
+dir.create("data",showWarnings=FALSE)
+
 # Download .idat files
 map2(pheno$red,"data/" %s+% pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
 map2(pheno$grn,"data/" %s+% pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
