@@ -1,7 +1,7 @@
 #' ---
 #' title: "Processing, analyzing, and interpreting epigenome-wide DNA methylation data"
 #' author: "Andrea Baccarelli, Andres Cardena, Elena Colicino, Jonathan Heiss, Allan Just"
-#' date: "June, 2018"
+#' date: "June, 2019"
 #' geometry: margin=2cm
 #' number_sections: true
 #' ---
@@ -10,304 +10,238 @@
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
+library(stringi)
+library(magrittr)
+library(data.table)
+library(svd)
+devtools::install_github("hhhh5/ewastools@master") # not on CRAN
+library(ewastools)
 
-#'# Processing methylation data  
+#' ## Importing the data
+#' 1. Read in the file `data/pheno_clean.csv` using `fread` from the data.table package, save it as object named `pheno`.
+#' 2. Import the methylation data using the function `read_idats`.
+#'    You only have to provide the first part of the file name without the `_Red.idat.gz` or `_Grn.idat.gz` suffixes.
+#' 3.  Save as object named `meth`
 
-#' Load packages that we will use focusing on *minfi*:  
-#'  see [Aryee et al. Bioinformatics 2014](http://doi.org/10.1093/bioinformatics/btu049).
-#' Other popular options for processing & analyzing methylation data include RnBeads and methylumi
-suppressMessages(library(minfi)) # popular package for methylation data
-library(shinyMethyl) # for visualizing quality control
-library(pryr) # for monitoring memory use
-suppressMessages(library(matrixStats)) # for calculating summary statistics
-library(ENmix) # probe type adjustment "rcp"
-suppressMessages(library(limma)) # for MDS plots
-suppressMessages(library(reshape,scales)) # reshape data and graphig 
-suppressMessages(require(sva)) # for addressing batch effects
-library(IlluminaHumanMethylationEPICmanifest) # manifest for Illumina's EPIC methylation 
-library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # annotation for Illumina's EPIC methylation arrays.
-#' Here we will use an existing methylation dataset - EPIC in peripheral blood (20 samples)  
-#' To read in your own dataset (usually "idat files" ending in .idat)  
-#' See the help for ?read.metharray.exp  
-#library(EPICdemo) # example dataset - not a publically available package
-
-#' import EPIC data from a sample sheet and idat files
-idatPath <- "C:/EBC3/idat" # path of the folder
-targets <- read.csv("C:/EBC3/idat/sample.info.csv", strip.white=T, stringsAsFactors=F) #sample information
-targets$Basename <- paste0(targets$Sentrix_ID, "_", targets$Sentrix_Position) # name of the files
-WB <- read.metharray.exp(base=idatPath, targets=targets, verbose=T) # read the idat file one by one 
-ncol(WB)
-#' alternative way to import idat files, using EPICdemo (not a publically available package)
-#sheet <- read.metharray.sheet(base = system.file("extdata", package = "EPICdemo"), pattern = "csv$")
-#WB <- read.metharray.exp(targets = sheet)
+pheno = fread("data/pheno.csv")
+meth = read_idats("data/" %s+% pheno$gsm,quiet=TRUE)
 
 
-#' Look at the attributes of this dataset  
-#' It is stored as a RGChannelSet which means it is not yet processed (red and green signals stored separately)
-WB
+#' Take a look at the dataset
 
-#' Prepare a summary of the dataset to look at interactively
-summaryqc <- shinySummarize(WB)
-#' Visualize qc with shinyMethyl
-#runShinyMethyl(summaryqc)
-#' cleanup
-#rm(sheet, covariates, colorSet, current.control.type, current.density.type, current.probe.type, 
-#   first_time, genderCutoff, mouse.click.indices, sampleColors, summaryqc)
+# The name of the platform (450K/EPIC)
+meth$platform
 
-#' Look at some of the phenotype data:
-pData(WB)[,1:7]
+#' A manifest with probe IDs, color channel, genomic coordinates and other important information
+meth$manifest[4000:4010]
+#' Please not that Type I probes have `addressU` and `addressM` (two different beads), whereas Type II probes only have a single `addressU`
 
-#' ## Estimate cell proportions
-#' Estimating proportions of 6 cell types found in peripheral blood 
-#'  _This next command is commented out because it requires >4GB of RAM_  
-#'  if you don't have that - you can load the presaved output below
- cellprop <- estimateCellCounts(WB, compositeCellType = "Blood",
-   cellTypes = c("CD8T","CD4T", "NK","Bcell","Mono","Gran"))
-rm(FlowSorted.Blood.450k);gc()
-# write.csv(cellprop, file = "data/cellprop_WB_20samps_EPICdemo.csv", row.names = F)
-#' read in the estimated cell proportions:
-#'cellprop <- read.csv("data/cellprop_WB_20samps_EPICdemo.csv")
-#' Here are the estimates
-#+ cellprop, results = "asis"
-knitr::kable(cellprop, digits = 2)
-#' note that they are close to summing to 1
-summary(rowSums(cellprop))
-#'Distribution of estimated cell types
-boxplot(cellprop*100, col=1:ncol(cellprop),xlab="Cell type",ylab="Estimated %",main="Cell type distribution")
-#'Distribution of estimated cell types by smoking status
-meltData <- melt(cbind(as.data.frame(cellprop*100),pData(WB)$SMOKE_STATUS))
-names(meltData)[1:3]<-c('Smoking','Celltype','Proportion')
-boxplot(as.numeric(as.character(Proportion)) ~Smoking+Celltype, data=meltData,col=c("blue","red"),xaxt="n",main="Cell type distribution by smoking status")
-axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=c(colnames(cellprop)))
-legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=c("blue","red"),cex=1.3)
+#' Most of the probes are of Type II
+table(meth$manifest$channel)
 
+#' Not all probes are targeting CpG sites
+table(meth$manifest$probe_type)
+
+#' Similar manifest for the control probes
+head(meth$controls)
+
+#' Also included
+# Matrices contained fluorescence intensities for the methylated (`M`) and unmethylated (`U`) signals
+dim(meth$M)
+meth$U[201:203,1:3]
+meth$M[201:203,1:3]
+
+#' Matrices with the bead copy number (`N` and `V`)
+dim(meth$N)
+meth$N[201:203,1:3]
+
+#' For some beads the copy number is zero. Because of the random assembly some did not end up on the chips
+colSums(meth$N==0)
+
+#' Matrices with the out-of-band intensities
+dim(meth$oobG$M) # same number as Type I red probes
+dim(meth$oobR$U)
+
+#' Some meta data
+head(meth$meta)
+
+#' # Quality control
+
+#' ## Control metrics
+#' The first quality check evaluates 17 control metrics which are describe in the [BeadArray Controls Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina. Exemplary, the "Bisulfite Conversion II" metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
+
+#' 1. Use the functions `control_metrics` and `sample_failure`
+#' 2. Are there any failed samples?
+
+meth %>% control_metrics %>% sample_failure -> pheno$failed
+# Alternative syntax:
+# pheno$failed = sample_failure(control_metrics(meth))
+
+table(pheno$failed,useNA='ifany')
+#' There are no failed samples.
+
+#' ## Sex check
+#' 1. Apply the function `check_sex` on the `meth` object to compute the normalized average total fluorescence intensity of probes targeting the X and Y chromosomes.
+#' 2. Use the function `predict_sex` to infer the sex of the sample donors from the methylation data.
+#' 3. Add column `predicted_sex` to `pheno`
+#' 4. Are there samples where `sex != predicted_sex`? What is the sample ID?
+#' 5. Flag the problematic samples with a logical variable `exclude` in `pheno`
+
+pheno[,c("X","Y"):=check_sex(meth)]
+
+pheno$predicted_sex = predict_sex(pheno$X,pheno$Y,which(pheno$sex=="m"),which(pheno$sex=="f"))
+
+pheno[sex!=predicted_sex]
+plot(Y~X,data=pheno,type="n")
+text(Y~X,labels=sex,col=ifelse(sex=="m",2,1),data=pheno)
+
+pheno[,exclude:=FALSE]
+
+pheno[sex!=predicted_sex,.(gsm,sex,predicted_sex)]
+pheno[sex!=predicted_sex,exclude:=TRUE] # flag sample
+
+#' ## Detection p-values
+#' 
+
+meth %<>% detectionP
+chrY = meth$manifest[chr=='Y',index]
+detP = meth$detP[chrY,]
+detP = colSums(detP<0.01,na.rm=TRUE)
+
+boxplot(split(detP,pheno$predicted_sex),ylab="# of detected Y chromosome probes")
+split(detP,pheno$predicted_sex) %>% sapply(mean)
+
+#' Almost all of the 416 chromosome probes are called detected in male samples, for female samples on average 60 are called detected.
+
+#' How many probes are undetected (not counting the Y chromosome). The cut-off used here is 0.01
+meth$detP[-chrY,] %>% is_weakly_greater_than(0.01) %>% table(useNA="ifany")
+
+#' Less than 0.2% are undetected
+round((33749/16939303)*100,3)
+
+#' We should mask these undetected probes.
+meth %<>% mask(0.01)
+
+#' Dye-bias correction
+#' Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
+
+
+color_bias = meth %>% dont_normalize
+beta       = meth %>% correct_dye_bias %>% dont_normalize
+
+#' We can look at a few methylation values on the fly and see whether dye-bias correction changed them
+meth$manifest$channel[201:203] # One probe for each type/color channel
+color_bias[201:203,1:3] %>% round(4)
+beta      [201:203,1:3] %>% round(4)
+
+#' If we calculate beta-values from raw data, we can observe the dye bias as a deviation of the beta-values for heterozygous SNPs from 0.5
+snps = meth$manifest[probe_type=="rs" & channel=="Both"]$index
+
+plot (density(color_bias[snps,14],na.rm=TRUE,bw=0.1),col=1,main="Dye-bias correction")
+lines(density(beta      [snps,14],na.rm=TRUE,bw=0.1),col=2)
+abline(v=0.5,lty=3)
+legend("topleft",col=1:2,legend=c("raw","corrected"))
+
+#' 
+plot (density(beta[meth$manifest$channel=="Grn" ,1],na.rm=TRUE),col="green",main="Distribution of beta-values")
+lines(density(beta[meth$manifest$channel=="Red" ,1],na.rm=TRUE),col="red")
+lines(density(beta[meth$manifest$channel=="Both",1],na.rm=TRUE),col="black")
+legend("topright",legend=c("Type I Red","Type I Grn","Type II"),lwd=1,col=c("red","green","black"))
+
+#' ## SNP outliers
+#' `snp_outliers()` returns the average log odds of belonging to the outlier component across all SNP probes. I recommend to flag samples with a score greater than -4 for exclusion.
+snps = meth$manifest[probe_type=="rs"]$index
+genotypes = call_genotypes(beta[snps,],learn=FALSE)
+pheno$outlier = snp_outliers(genotypes)
+
+stripchart(pheno$outlier,method="jitter",pch=4)
+abline(v=-4,lty="dotted",col=2)
+
+pheno[outlier>-4]
+pheno[outlier>-4,exclude:=TRUE]
+
+#' The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
+
+pheno$donor_id = enumerate_sample_donors(genotypes)
+pheno[,n:=.N,by=donor_id]
+pheno[n>1,.(gsm,donor_id)]
+
+pheno[gsm=="GSM2260543",exclude:=TRUE] # drop duplicate
+
+#' ## Principal component analysis
+#' Principal component analysis is a popular feature reduction method: it projects high-dimensional data into a lower-dimensional representation while trying to retain as much variability as possible. This is especially useful when either individual features are highly correlated and it is therefore reasonable to summarize them, or when (sometimes subtle) traces of background effects can be found across of large number of features.
+#' 1. Get of subset of beta without probes on the X and Y chromosome
+
+chrXY = meth$manifest$chr %in% c("X","Y") | meth$manifest$probe_type == "rs"
+pcs = beta[-chrXY,]
+pcs = pcs - rowMeans(pcs)
+pcs = na.omit(pcs)
+pcs = t(pcs)
+pcs = trlan.svd(pcs,neig=2)
+pcs = pcs$u
+
+pheno$pc1 = pcs[,1]
+pheno$pc2 = pcs[,2]
+
+plot(pc2~pc1,col=ifelse(sex=="m",2,1),data=pheno)
+text(pc2~pc1,labels=pheno[34]$gsm,data=pheno[34],pos=4,offset=1,col=2)
+
+pheno[gsm=="GSM2219539",exclude:=TRUE]
+
+#' GSM2219539 is actually a lung tissue sample from another GEO dataset. It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.
+#' PCA may be applied iteratively. After excluding samples that manifest as outliers, repeating PCA can give very different principal components.
 #'
-#' ## Preprocessing the data
-#' Preprocess the data - this removes technical variation  
-#' There are several popular methods including intra- and inter-sample normalizations  
-#' Here we demonstrate an effective and lightweight approach:  
-#' "Normal out of band background" (Noob) within-sample correction - see [Triche et al 2013](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3627582/)
-system.time(WB.noob <- preprocessNoob(WB))
-#' We see the resulting object is now a MethylSet (because the RGset has been preprocessed)  
-WB.noob
+
+#' ## Leukocyte composition
+#' This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function `estimateLC()` implements the [Houseman method](https://doi.org/10.1186/1471-2105-13-86) to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see `?estimateLC` for a list of options). The function operates on the matrix of beta-values.
+#' 
+#' 1. Estimate the leukocyte composition using the function `estimateLC`. What does the function return?
+#' 2. Add the cell proportion estimates as new columns to the `pheno` data.table using the function `cbind`
+#' 3. Plot the proportions of granulocytes versus (the column named `GR`) using
+#' 4. Set the `exclude` flag TRUE for the conspicuous sample
+
+LC = estimateLC(beta,ref="Bakulski+Reinius")
+
+stripchart(rowSums(LC),xlab="Sum of cell proportions",m="jitter")
+abline(v=1,lty=3,col=2)
+
+pheno = cbind(pheno,LC)
+
+plot(pheno$GR,ylim=c(0,1))
+
+pheno[which.min(GR),.(gsm,exclude)]
+pheno[which.max(GR),.(gsm,exclude)]
+
+pheno[gsm=="GSM1185585",exclude:=TRUE]
 
 
-#' we can look at a few methylation values on the fly
-#' and see that the preprocessing changed them:
-# first three CpGs on the first three samples
-# raw RGset
-print(minfi::getBeta(WB)[1:3,1:3], digits = 2)
-# after preprocessing
-print(getBeta(WB.noob)[1:3,1:3], digits = 2)
-#' and we can check that
-#' the dimensions of the beta matrices are unchanged
-identical(dim(minfi::getBeta(WB)), dim(getBeta(WB.noob)))
+#' LC stratified by smoking status
+#' 
+LC$smoker = pheno$smoker
+LC = melt(LC,value.name="proportion",variable.name="cell_type",id.vars="smoker")
 
-#' Distribution of beta-values: before and after normalization
-#+ fig.width=8, fig.height=6, dpi=300
-densityPlot(WB, main = "density plots before and after preprocessing", pal="#440154FF", ylim=c(0,4.5))
-densityPlot(WB.noob, add = F, pal = "#FDE725FF")
-# Add legend
-legend("topleft", c("Noob","Raw"), 
-       lty=c(1,1), title="Normalization", 
-       bty='n', cex=1.3, col=c("#FDE725FF","#440154FF"))
-#' notice the blue density traces (raw) are more spread out; background correction brings them together  
+boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by smoking status",xaxt="n")
+axis(1,at=seq(from=1.5, to=13.5,by=2),adj=1,labels=unique(LC$cell_type))
+legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
 
-#' the use of a density plot may give the impression of values outside (0,1)  
-#' but let's check:
-print(colRanges(minfi::getBeta(WB), na.rm = T), digits = 2)
-print(colRanges(getBeta(WB.noob)), digits = 2)
-#' we confirm that plot tails were an artifact of applying a continuous distribution  
-#'  (in estimating the density function)
-
-
-detectionP.minfi <- function(rgSet) {
-    minfi:::.isRGOrStop(rgSet)
-    locusNames <- getManifestInfo(rgSet, "locusNames")
-    detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
-                   dimnames = list(locusNames, colnames(rgSet)))
-
-    r <- minfi::getRed(rgSet)
-    g <- minfi::getGreen(rgSet)
-
-    controlIdx <- minfi::getControlAddress(rgSet, controlType = "NEGATIVE")   
-    
-    rBg <- r[controlIdx,,drop=FALSE]
-    rMu <- matrixStats::colMedians(rBg)
-    rSd <- matrixStats::colMads(rBg)
-
-    gBg <- g[controlIdx,,drop=FALSE]
-    gMu <- matrixStats::colMedians(gBg)
-    gSd <- matrixStats::colMads(gBg)
-    
-    TypeII <- minfi::getProbeInfo(rgSet, type = "II")
-    TypeI.Red <- minfi::getProbeInfo(rgSet, type = "I-Red")
-    TypeI.Green <- minfi::getProbeInfo(rgSet, type = "I-Green")
-
-    for (i in 1:ncol(rgSet)) {   
-        ## Type I Red
-        intensity <- r[TypeI.Red$AddressA, i] + r[TypeI.Red$AddressB, i]
-        detP[TypeI.Red$Name, i] <- pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
-        ## Type I Green
-        intensity <- g[TypeI.Green$AddressA, i] + g[TypeI.Green$AddressB, i]
-        detP[TypeI.Green$Name, i] <- pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
-        ## Type II
-        intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
-        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),log.p=TRUE,lower.tail=FALSE)
-    }
-    
-  detP/log(10)
-}
-
-detP = detectionP.minfi(WB)
-chrY = which(getAnnotation(WB)@listData$chr == "chrY")
-detP = detP[chrY,]
-sexes = split(1:20,pData(WB)$SEX)
-cutoffs = -(0:16)
-
-tmp = sapply(cutoffs,function(t){ colSums(detP<t,na.rm=TRUE) })
-sexes$male   = apply(tmp[sexes$male  ,],2,median)
-sexes$female = apply(tmp[sexes$female,],2,median)
-
-plot  (-cutoffs,sexes$female,ylim=c(0,nrow(detP)),ylab="# chrY probes detected",xlab="p-value cutoff",xaxt="n",yaxt="n")
-points(-cutoffs,sexes$male,pch=3)
-axis(1,at=c(0,2,5,10,15),labels=c("1","0.01","1e-5","1e-10","1e-15"))
-axis(2,at=c(0,100,200,300,400,500,561),labels=c(0,100,200,300,400,500,561))
-legend("center",pch=c(3,1),legend=c('Male','Female'),bty="n")
-
-
-#' ## probe failures due to low intensities  
-#' We want to drop probes with intensity that is not significantly above background signal (from negative control probes)
-detect.p <- minfi::detectionP(WB, type = "m+u")
-#' Let's look at the median detection P-values
-#+ fig.width=8, fig.height=6, dpi=300
-barplot(colMeans(detect.p), col=rainbow(dim(detect.p)[2]), las=2, 
-        cex.names=0.7, main="Mean detection P by sample",cex.axis=0.8, ylim=c(0,3e-4))
-#' Count of failed probes per sample 
-#' P>0.01 (i.e. not significant compared to background signal)
-knitr::kable(t(as.matrix(colSums(detect.p > 0.01))[1:5,]))
-knitr::kable(t(as.matrix(colSums(detect.p > 0.01))[6:10,]))
-knitr::kable(t(as.matrix(colSums(detect.p > 0.01))[11:15,]))
-knitr::kable(t(as.matrix(colSums(detect.p > 0.01))[16:20,]))
-#' This is less than 1% of probes per sample  
-#' Total number of failed measures (in all probes)
-sum(detect.p > 0.01)
-#'Restrict data to good probes only:
-detect.p[detect.p > 0.01] <- NA
-detect.p <- na.omit(detect.p)
-intersect <- intersect(rownames(getAnnotation(WB)), rownames(detect.p))
-length(intersect)
-#' Filter bad probes from our methylset
-nrow(WB.noob)
-WB.noob <- WB.noob[rownames(getAnnotation(WB.noob)) %in% intersect,]
-nrow(WB.noob)
-# cleanup
-rm(intersect, detect.p);gc()
-
-#' #Probe type adjustment  
-#' Need to adjust for probe-type bias Infinium I (type I) and Infinium II (type II) probes  
-#' RCP with EnMix: Regression on Correlated Probes [Niu et al. Bioinformatics 2016](http://www.ncbi.nlm.nih.gov/pubmed/27153672)
-betas.rcp <- rcp(WB.noob)
-dim(betas.rcp)
-#' note that this package takes beta values out of the minfi object - result is a matrix
-class(betas.rcp) 
-
-## Annotation of Infinium type for each probe (I vs II)
-typeI <-   minfi::getProbeInfo(WB.noob,type="I")$Name
-typeII <-  minfi::getProbeInfo(WB.noob,type="II")$Name
-onetwo <- rep(1, nrow(betas.rcp))
-onetwo[rownames(betas.rcp) %in% typeII] <- 2
-# almost 84% of our probes are type II
-knitr::kable(t(table(onetwo)))
-
-#' Density plots by Infinium type: before and after RCP calibration  
-#' Probe-type bias adjustment before and after RCP
-#+ fig.width=15, fig.height=7, dpi=300
-par(mfrow=c(1,2)) # Side-by-side density distributions 
-densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "#FDE725FF",main='Beta density',ylim=c(0,6.5))
-densityPlot(WB.noob[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "#440154FF")
-densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeI,],pal = "#FDE725FF",main='Beta density probe-type adjusted',ylim=c(0,6.5))
-densityPlot(betas.rcp[rownames(getAnnotation(WB.noob)) %in% typeII,],add = F, pal = "#440154FF")
-legend("center", c("Infinium I","Infinium II"), 
-       lty=c(1,1), title="Infinium type", 
-       bty='n',col=c("#FDE725FF","#440154FF"))
-#' notice that the type I and II peaks are more closely aligned after rcp adjustment  
-#' (particularly in the higher peak)
-rm(onetwo, typeI, typeII)
-
-#' ## Batch effects
-#' As an example of an observable batch effect, samples are processed in plates (e.g. bisulfite converting 96 at a time),  
-#' and then in chips (EPIC array has 8 rows and 1 column).  
-#' This can create batch effects (technical variation) with different intensities by position (row effect).  
-#' Other commonly observed batch effects include bisulfite processing plate, chip, and processing date.
-#' Let's check if samples varied across rows in these data (even in different chips):
-pData(WB.noob)$Array <- pData(WB.noob)$Sentrix_Position
-knitr::kable(t(as.matrix(table(pData(WB.noob)$Array))), 
-             col.names = paste0("Row ", 1:8))
 
 #' ## Principal Component Analysis (PCA)
 #' Calculate major sources of variability of DNA methylation using PCA
-PCobject = prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
+PCobject = prcomp(t(na.omit(beta)),center=T,scale= T)
 
-#' Extract the Principal Components from SVD
-PCs <- PCobject$x
 #' Proportion of variance explained by each additional PC
 cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
 knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
-#' Is the major source of variability associated with position on chip?
-par(mfrow = c(1, 1))
-boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-        ylab = "PC1",las=2, main="Position on chip",col=rainbow(8))
-summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
+# drop problematic samples
+keep = which(!pheno$exclude)
 
-#' ## Removing batch effects using ComBat from the sva package
-# First we convert from beta-values to M-values
-Mvals <- log2(betas.rcp)-log2(1-betas.rcp)
-#' ComBat eBayes adjustment using a known variable of interest (here we use row)
-Mvals.ComBat <- ComBat(Mvals, batch = pData(WB.noob)$Array)
-# Convert M-values back to beta-values
-betas.rcp <- 2^Mvals.ComBat/(1+2^Mvals.ComBat)
+# drop columns no longer needed
+pheno = pheno[,.(gsm,smoker,sex,CD4,CD8,NK,MO,GR,B,nRBC)]
 
-#' PCA after removing batch effects
-PCobject <- prcomp(t(betas.rcp), retx = T, center = T, scale. = T)
-PCs <- PCobject$x
-#' The first PC is no longer associated with sample plate
-boxplot(PCs[, 1] ~ pData(WB.noob)$Array,
-        ylab = "PC1",las=2, main="Position on chip",col=rainbow(8))
-summary(lm(PCs[, 1] ~ pData(WB.noob)$Array))
-#' ComBat removed the apparent batch effect
-#cleanup
-rm(PCs, Mvals, cummvar, PCobject)
+# write data to disk
+pheno = pheno[keep]
+beta  = beta[,keep]
+manifest = copy(meth$manifest)
 
-#' Phenotype associated with large sources of variability
-#+ fig.width=8, fig.height=6, dpi=300
-plotMDS(getBeta(WB.noob), top=10000, gene.selection="common",
-        pch=17,col=c("deeppink","blue")[factor(pData(WB.noob)$SEX)],
-        dim=c(1,2),cex=1.5)
-legend("center", legend=levels(factor(pData(WB.noob)$SEX)),bty='n',
-       cex=1.5,pch=17,col=c("deeppink","blue"))
-
-#'## predict sex from methylation
-Gbeta <- mapToGenome(WB)  #map to the genome
-#' getSex predicts sex based on X and Y chromosome methylation intensity
-getSex(Gbeta) 
-#' we see that our predictions match the phenodata
-table(pData(WB)$SEX,getSex(Gbeta)$predictedSex)
-#' We can actually look at the intensities in the sex-crhomosomes
-Gbeta = addSex(Gbeta)
-plotSex(Gbeta,id=pData(WB)$SEX)
-# cleanup
-
-save(WB,WB.noob,file="C:/EBC3/Data/WB.noob.RData")
-save(betas.rcp,file="C:/EBC3/Data/betas.rcp.RData")
-save(Gbeta,file="C:/EBC3/Data/Gbeta.RData")
-
-#' # memory usage
-#' as a reminder - these are large datasets and we are working in RAM.  
-#' Check memory usage with:
-pryr::mem_used()
-# this command will check the maximum memory usage on Windows
-memory.size(max = T)
-
-#' End of script 1
+save(pheno,manifest,beta,file="data/processed.rda")

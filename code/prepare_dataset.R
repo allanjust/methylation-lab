@@ -1,4 +1,4 @@
-devtools::install_github("hhhh5/ewastools@v1.4")
+devtools::install_github("hhhh5/ewastools@master")
 library(ewastools)
 library(stringi)
 library(data.table)
@@ -77,8 +77,8 @@ pheno = pheno[c(
 dir.create("data",showWarnings=FALSE)
 
 # Download .idat files
-map2(pheno$red,"data/" %s+% pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(pheno$grn,"data/" %s+% pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+map2(pheno$red,"data/" %s+% pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(pheno$grn,"data/" %s+% pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
