@@ -117,7 +117,7 @@ split(detP,pheno$predicted_sex) %>% sapply(mean)
 meth$detP[-chrY,] %>% is_weakly_greater_than(0.01) %>% table(useNA="ifany")
 
 #' Less than 0.2% are undetected
-round((33749/16939303)*100,3)
+round((33749/(33749+16939303))*100,3)
 
 #' We should mask these undetected probes.
 meth %<>% mask(0.01)
@@ -200,7 +200,7 @@ pheno[gsm=="GSM2219539",exclude:=TRUE]
 #' 3. Plot the proportions of granulocytes versus (the column named `GR`) using
 #' 4. Set the `exclude` flag TRUE for the conspicuous sample
 
-LC = estimateLC(beta,ref="Bakulski+Reinius")
+LC = estimateLC(beta,ref="Reinius")
 
 stripchart(rowSums(LC),xlab="Sum of cell proportions",m="jitter")
 abline(v=1,lty=3,col=2)
@@ -221,7 +221,7 @@ LC$smoker = pheno$smoker
 LC = melt(LC,value.name="proportion",variable.name="cell_type",id.vars="smoker")
 
 boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by smoking status",xaxt="n")
-axis(1,at=seq(from=1.5, to=13.5,by=2),adj=1,labels=unique(LC$cell_type))
+axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=unique(LC$cell_type))
 legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
 
 
@@ -237,7 +237,7 @@ knitr::kable(t(as.matrix(cummvar)),digits = 2)
 keep = which(!pheno$exclude)
 
 # drop columns no longer needed
-pheno = pheno[,.(gsm,smoker,sex,CD4,CD8,NK,MO,GR,B,nRBC)]
+pheno = pheno[,.(gsm,smoker,sex,CD4,CD8,NK,MO,GR,B)]
 
 # write data to disk
 pheno = pheno[keep]
