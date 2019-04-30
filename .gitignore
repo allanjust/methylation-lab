@@ -40,4 +40,5 @@ vignettes/*.pdf
 .DS_Store
 
 # GEO downloads
-data/GSE*
+data/GSM*
+
