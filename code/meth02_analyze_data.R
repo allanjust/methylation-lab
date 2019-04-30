@@ -6,51 +6,33 @@
 .libPaths("C:/EBC3/Rpackages")
 knitr::opts_knit$set(root.dir = "../")
 
-#' we have a processed dataset with 15 samples (otherwise we run script 01)
-#if(!exists("WB.noob")){
+#' we have a processed dataset with 30 samples (otherwise we run script 01)
+#if(!exists("data/processed.rds")){
 #  source("code/meth01_process_data.R")
 #}
 
 # load the data
-library(minfi)
-load("C:/EBC3/Data/WB.noob.RData") # phenotype data
-dim(WB.noob)
-cellprop<-read.csv("C:/EBC3/methylation-lab/data/cellprop_WB_20samps_EPICdemo.csv") # cell type composition
-load("C:/EBC3/Data/betas.rcp.RData") # processed betas
-load("C:/EBC3/Data/Gbeta.RData") # annotation file
+load("data/processed.rda")
 
 #' load packages
 suppressPackageStartupMessages({
+  library(DMRcate) # for regional analysis
+  library(magrittr)
   library(CpGassoc) # for running association analysis between methylation levels values and phenotype of interest
   library(data.table) # for fast aggregation of large data 
   library(qqman) # for visualization of data
-  library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19) # for annotation for Illumina's EPIC methylation arrays
-  library(DMRcate) # for regional analysis
-  library(MASS) # for basic statistics
-  library(sandwich) # for linear regression (robust sandwich variance estimator)
-  library(lmtest) # for testing Linear Regression Models
   library(stringi) # string manipulation
 })
 
-#' consolidate our phenodata
-pheno = data.frame(pData(WB.noob))
-pheno = pheno[,c("SMOKE_STATUS","SEX","AGE","Array")]
-pheno = cbind(pheno,cellprop)
-
-pheno$SMOKE_STATUS = factor(pheno$SMOKE_STATUS)
-pheno$SEX          = factor(pheno$SEX)
-
-# cleanup 
-rm(WB.noob)
-
-#' quick check of the distribution of smoke between arrays
-table(pheno[,c("SMOKE_STATUS","Array")])
+#' Code categorical variable as factors
+pheno$smoker %<>% factor
+pheno$sex    %<>% factor
 
 ## Cleaning up the methylation data
 #' Filters a matrix of beta values by distance to single nucleotide polymorphism (SNP) and SNPs with the minor allele frequency (MAF) of 5% (rare variant). 
 #' Also removes crosshybridising probes and sex-chromosome probes.
-dim(betas.rcp)
-betas.clean = rmSNPandCH(betas.rcp,  mafcut = 0.05, and = TRUE, rmcrosshyb = TRUE, rmXY= TRUE)
+dim(beta)
+betas.clean = beta[manifest[probe_type=="cg" & !chr %in% c("X","Y")]$index,]
 nCpG = dim(betas.clean)[1]
 nCpG
 
@@ -59,63 +41,50 @@ nCpG
 
 #' First we can run a linear regression on a single CpG that we have already picked
 CpG.name = "cg05575921"
-CpG.level <- betas.clean[CpG.name,]
+pheno$CpG.level <- betas.clean[CpG.name,]
 
-#' difference in methylation between smokers and non-smokers for this CpG
+#' Difference in methylation between smokers and non-smokers for this CpG
 #' some descriptive statistics
-knitr::kable(cbind(Min   = round( tapply(CpG.level,pheno$SMOKE_STATUS,min   ),3),
-                   Mean  = round( tapply(CpG.level,pheno$SMOKE_STATUS,mean  ),3), 
-                   Median= round( tapply(CpG.level,pheno$SMOKE_STATUS,median),3),
-                   Max   = round( tapply(CpG.level,pheno$SMOKE_STATUS,max   ),3),
-                   SD    = round( tapply(CpG.level,pheno$SMOKE_STATUS,sd    ),3),
-                   N     = table( pheno$SMOKE_STATUS )))
 
-#' difference in beta methylation values between Smokers and non smokers
-par(mfrow=c(1,2))
-boxplot(CpG.level ~ pheno$SMOKE_STATUS, main=paste0("Beta-values\n", CpG.name), col=c("blue","red"),ylim=c(.5,1))
+pheno[,.(
+   Min    = min   (CpG.level) %>% round(3)
+  ,Mean   = mean  (CpG.level) %>% round(3)
+  ,Median = median(CpG.level) %>% round(3)
+  ,Max    = max   (CpG.level) %>% round(3)
+  ,SD     = sd    (CpG.level) %>% round(3)
+  ,.N),by=smoker] %>% knitr::kable(.)
 
-#' linear regression on betas
-summary(lm(CpG.level~pheno$SMOKE_STATUS))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
+#' Difference in beta methylation values between Smokers and non smokers
+boxplot(CpG.level ~ smoker,pheno,main=paste0("Beta-values\n", CpG.name), col=c("blue","red"),ylim=c(.3,1))
 
-#' what if we use raw beta?
-CpG.level.raw <- minfi::getBeta(WB)[CpG.name,] # select the same CpG
+#' Linear regression on betas
+lm(CpG.level ~ smoker,data=pheno) %>% summary %>% coef
 
-#' descriptive stats are different 
-knitr::kable(cbind(Min    = round( tapply(CpG.level.raw, pheno$SMOKE_STATUS,min   ),3),
-                   Mean   = round( tapply(CpG.level.raw, pheno$SMOKE_STATUS,mean  ),3), 
-                   Median = round( tapply(CpG.level.raw, pheno$SMOKE_STATUS,median),3),
-                   Max    = round( tapply(CpG.level.raw, pheno$SMOKE_STATUS,max   ),3),
-                   SD     = round( tapply(CpG.level.raw, pheno$SMOKE_STATUS,sd    ),3),
-                   N      = table( pheno$SMOKE_STATUS )))
+#' Comparison with m-values
+pheno[,CpG.mlevel:=log2(CpG.level/(1-CpG.level))]
 
-boxplot(CpG.level.raw ~ pheno$SMOKE_STATUS, main=paste0("Raw Beta-values\n",CpG.name), col=c("blue","red"),ylim=c(.5,1))
+pheno[,.(
+   Min    = min   (CpG.mlevel) %>% round(3)
+  ,Mean   = mean  (CpG.mlevel) %>% round(3)
+  ,Median = median(CpG.mlevel) %>% round(3)
+  ,Max    = max   (CpG.mlevel) %>% round(3)
+  ,SD     = sd    (CpG.mlevel) %>% round(3)
+  ,.N),by=smoker] %>% knitr::kable(.)
 
-#' linear regression on raw betas
-summary(lm(CpG.level.raw ~ pheno$SMOKE_STATUS))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")] # results are different
-
-#' comparison with m-values
-CpG.mlevel = log2(CpG.level/(1-CpG.level))
-
-knitr::kable(cbind(Min    = round( tapply(CpG.mlevel, pheno$SMOKE_STATUS,min   ),3),
-                   Mean   = round( tapply(CpG.mlevel, pheno$SMOKE_STATUS,mean  ),3), 
-                   Median = round( tapply(CpG.mlevel, pheno$SMOKE_STATUS,median),3),
-                   Max    = round( tapply(CpG.mlevel, pheno$SMOKE_STATUS,max   ),3),
-                   SD     = round( tapply(CpG.mlevel, pheno$SMOKE_STATUS,sd    ),3),
-                   N      = table(pheno$SMOKE_STATUS)))
 
 par(mfrow=c(1,2))
-boxplot(CpG.level  ~ pheno$SMOKE_STATUS, main=paste0("Beta-values\n",CpG.name), col=c("blue","red"))
-boxplot(CpG.mlevel ~ pheno$SMOKE_STATUS, main=paste0("M-values\n"   ,CpG.name), col=c("blue","red"))
+boxplot(CpG.level  ~ smoker,data=pheno,main=paste0("Beta-values\n",CpG.name), col=c("blue","red"))
+boxplot(CpG.mlevel ~ smoker,data=pheno,main=paste0("M-values\n"   ,CpG.name), col=c("blue","red"))
 
 #' linear regression on m-values
-summary(lm(CpG.mlevel~pheno$SMOKE_STATUS))$coefficients[2,c("Estimate", "Pr(>|t|)","Std. Error")]
+lm(CpG.mlevel ~ smoker,data=pheno) %>% summary %>% coef
 
-#' we can always extract measures of the relative quality of statistical models - e.g. adjusted R2 - to look at model performance  
+#' We can always extract measures of the relative quality of statistical models - e.g. adjusted R2 - to look at model performance  
 #' model on betas
-summary(lm(CpG.level~pheno$SMOKE_STATUS))$adj.r.squared
+lm(CpG.level  ~ smoker,data=pheno) %>% summary %$% adj.r.squared
 
 #' model on mvalues
-summary(lm(CpG.mlevel~pheno$SMOKE_STATUS))$adj.r.squared
+lm(CpG.mlevel ~ smoker,data=pheno) %>% summary %$% adj.r.squared
 
 #'## EWAS and results using CpGassoc
 #'see [Barfield et al. Bioinformatics 2012](http://www.ncbi.nlm.nih.gov/pubmed/22451269)  
@@ -123,8 +92,9 @@ summary(lm(CpG.mlevel~pheno$SMOKE_STATUS))$adj.r.squared
 #' Smoking as predictor  
 #' note that CpGassoc is quite fast for running almost a million regressions!
 
-pheno$SMOKE = ifelse(pheno$SMOKE_STATUS=="SMOKER",1,0)
-system.time(results1 <- cpg.assoc(betas.clean, pheno$SMOKE))
+pheno[,smoke_dummy:=ifelse(smoker=="smoker",1,0)]
+
+system.time(results1 <- cpg.assoc(betas.clean, pheno$smoke_dummy,fdr.cutoff=0.1))
 
 #' there are several components of the results
 class(results1)
@@ -136,7 +106,7 @@ head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3]))
 head(cbind(results1$coefficients[,4:5], P.value=results1$results[,3])[order(results1$results[,3]),])
 #' check with previous result on our selected CpG (running lm without CpGassoc)
 cbind(results1$coefficients[,4:5],results1$results[,c(1,3)])[CpG.name,]
-summary(lm(CpG.level~pheno$SMOKE_STATUS))
+summary(lm(CpG.level~smoker,pheno))
 
 #' Bonferroni significant hits
 table(results1$results[,3] < 0.05/(nCpG))
@@ -151,8 +121,8 @@ table(results1$results[,5] < 0.05)
 #' 
 results2 = cpg.assoc(
            betas.clean
-          ,pheno$SMOKE
-          ,covariates=pheno[,c("SEX","AGE","CD8T","CD4T","NK","Bcell","Mono","Gran")]
+          ,pheno$smoke_dummy
+          ,covariates=as.data.frame(pheno[,.(sex,CD8,CD4,NK,B,MO,GR)])
           )
 
 print(results2)
@@ -160,8 +130,8 @@ print(results2)
 #'using mvalues
 results3 <- cpg.assoc(
            betas.clean
-          ,pheno$SMOKE
-          ,covariates=pheno[,c("SEX","AGE","CD8T","CD4T","NK","Bcell","Mono","Gran")]
+          ,pheno$smoke_dummy
+          ,covariates=as.data.frame(pheno[,.(sex,CD8,CD4,NK,B,MO,GR)])
           ,logit.transform=TRUE
           )
 
@@ -184,39 +154,31 @@ lambda(results1$results[,3])
 #' Lambda after cell type adjustment
 lambda(results2$results[,3])
 
-#' Map the results to the epigenetic annotation
-IlluminaAnnot<-as.data.frame(getAnnotation(Gbeta))
 
-#' Restrict to good quality probes and order data frames
-IlluminaAnnot <- IlluminaAnnot[IlluminaAnnot$Name %in% results2$results$CPG.Labels,]
-IlluminaAnnot <- IlluminaAnnot[match(results2$results$CPG.Labels, IlluminaAnnot$Name),]
+datamanhat = cbind(results2$results,results2$coefficients)
+setDT(datamanhat)
+datamanhat = datamanhat[,.(probe_id=CPG.Labels,effect.size,std.error,P.value)]
 
-#' Check that CpGs are align
-identical(IlluminaAnnot$Name,results2$results$CPG.Labels)
+datamanhat = merge(datamanhat,manifest[,.(probe_id,chr,mapinfo)],by="probe_id")
 
-datamanhat <- data.frame(CpG=results2$results[,1],Chr=as.character(IlluminaAnnot$chr),
-                         Mapinfo=IlluminaAnnot$pos, UCSC_RefGene_Name=IlluminaAnnot$UCSC_RefGene_Name, 
-                         Pval=results2$results[,3], Eff.Size = results2$coefficients[,4], Std.Error = results2$coefficients[,5])
-
-#' see where the top hits are
-head(datamanhat[order(datamanhat$Pval), ],n=7)
+#' See where the top hits are
+datamanhat[order(P.value)][1:7]
 
 #' Volcano Plot-results2
-#' with Bonferroni threshold and current FDR
-plot(results2$coefficients[,4],-log10(results2$results[,3]), 
-     xlab="Estimate", ylab="-log10(Pvalue)", main="Volcano Plot\nadjusted for cell proportions",ylim=c(0,8))
-#Bonferroni threshold & FDR threshold
+#' Bonferroni threshold
+#' 
+plot(-log10(P.value) ~ effect.size,data=datamanhat,xlab="Estimate",ylab="-log10(p-value)",main="Volcano Plot\nadjusted for cell proportions",ylim=c(0,8))
 abline(h = -log10(0.05/(nCpG)), lty=1, col="#FDE725FF", lwd=2)
 
 #'## Manhattan plot for cell-type adjusted EWAS  
-#' Reformat the variable Chr (so we can simplify and use a numeric x-axis)
-datamanhat$Chr <- as.numeric(sub("chr","",datamanhat$Chr))
+#' Cast the variable chr (so we can simplify and use a numeric x-axis)
+datamanhat[,chr:=as.integer(chr)]
 
-#' the function manhattan needs data.frame including CpG, Chr, MapInfo and Pvalues
-manhattan(datamanhat,"Chr","Mapinfo", "Pval", "CpG", 
-          genomewideline = -log10(0.05/(nCpG)), suggestiveline = FALSE,
-          main = "Manhattan Plot \n adjusted for cell proportions",ylim=c(0,8))
+qqman::manhattan(datamanhat,chr="chr",bp="mapinfo",p="P.value",snp="probe_id"
+   ,suggestiveline=FALSE, genomewideline = -log10(0.05/(nCpG)),ylim=c(0,8)
+   ,main = "Manhattan Plot \n adjusted for cell proportions")
 
 #' cleanup
-rm(nCpG, CpG.name, CpG.level, CpG.mlevel, datamanhat, IlluminaAnnot,lambda,results1,results2,results3,Gbeta,WB,betas.rcp,CpG.level.raw);gc()
+rm(nCpG,CpG.name,datamanhat,lambda,results1,results2,results3)
+gc()
 #' End of script 02
