@@ -18,7 +18,7 @@ update.packages(lib.loc="C:/EBC3/Rpackages")
 #' vector of packages we will need if not yet installed:
 
 methpackagesCRAN <- c("Rcpp","openssl","CpGassoc", "rmarkdown", "knitr", "matrixStats","reshape","glmnet","statmod","XML",
-                      "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest","foreach", "stringi","doParallel")
+                      "pryr", "data.table", "qqman", "RPMM", "MASS", "sandwich", "lmtest","foreach", "stringi","doParallel","magrittr","purrr")
 methpackagesBioC <- c("minfi", "FlowSorted.Blood.450k", "missMethyl", "ENmix","IlluminaHumanMethylation450kanno.ilmn12.hg19",
                       "IlluminaHumanMethylation450kmanifest", "IlluminaHumanMethylationEPICmanifest",
                       "sva", "IlluminaHumanMethylationEPICanno.ilm10b2.hg19", 
