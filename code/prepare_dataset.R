@@ -1,4 +1,3 @@
-devtools::install_github("hhhh5/ewastools@master")
 library(ewastools)
 library(stringi)
 library(data.table)
