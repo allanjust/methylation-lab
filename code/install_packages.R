@@ -37,6 +37,8 @@ if(length(toinstallBioC >= 1)) {
   cat("finished installing new packages from BioConductor\n")
 } else cat("packages we need from BioConductor are already installed\n")
 
+devtools::install_github("hhhh5/ewastools@v1.5")
+
 #' check that we were successful
 if(!all(c(toinstallBioC, toinstallCRAN) %in% installed.packages()[,1])) stop(
   "required packages not installed - please retry script carefully making sure you have already updated R and work through any error messages")
