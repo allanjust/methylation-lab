@@ -37,7 +37,7 @@ pheno[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",vari
 # Reshape data.table from long to wide format
 pheno = dcast(pheno, gsm ~ variable)
 
-# Select and case the relevant variables
+# Select and parse the relevant variables
 pheno = pheno[,.(gsm,smoker=factor(`subject status`),red,grn)]
 pheno = rbind(pheno
 	,list(
