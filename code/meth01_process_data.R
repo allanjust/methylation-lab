@@ -34,7 +34,7 @@ meth$platform
 
 #' A manifest with probe IDs, color channel, genomic coordinates and other important information
 meth$manifest[4000:4010]
-#' Please not that Type I probes have `addressU` and `addressM` (two different beads), whereas Type II probes only have a single `addressU`
+#' Please note that Type I probes have `addressU` and `addressM` (two different beads), whereas Type II probes only have a single `addressU`
 
 #' Most of the probes are of Type II
 table(meth$manifest$channel)
