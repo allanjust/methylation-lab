@@ -243,6 +243,37 @@ manifest = copy(meth$manifest)
 
 save(pheno,manifest,beta,file="data/processed.rda")
 
+#'# Exploring global DNA Methylation variability via PCs
+# Let's look at the effect of sex
+#+ fig.width=8, fig.height=6, dpi=300
+plotMDS(beta, top=10000, gene.selection="common",
+        pch=17,col=c("deeppink","blue")[factor(pheno$sex)],
+        dim=c(1,2),cex=1.5)
+legend("center", legend=levels(factor(pheno$sex)),bty='n',
+       cex=1.5,pch=17,col=c("deeppink","blue"))
+
+# Let's look at the effect of sex but let's remove the X and Y chromosomes
+betas.clean = beta[manifest[probe_type=="cg" & !chr %in% c("X","Y")]$index,]
+plotMDS(betas.clean, top=10000, gene.selection="common",
+        pch=17,col=c("deeppink","blue")[factor(pheno$sex)],
+        dim=c(1,2),cex=1.5)
+legend("center", legend=levels(factor(pheno$sex)),bty='n',
+       cex=1.5,pch=17,col=c("deeppink","blue"))
+
+#' It would be useful to look at several traits with global variability
+cov<-data.frame(pheno[,2:9])
+npc <- 20 # Top 20 PCs
+svd <- prcomp(t(na.omit(betas.clean)))
+screeplot(svd, npc, type = "barplot")
+eigenvalue <- svd[["sdev"]]^2
+prop <- (sum(eigenvalue[1:npc])/sum(eigenvalue)) * 100
+cat("Top ", npc, " principal components can explain ", 
+    prop, "% of data \n    variation", "\n")
+screeplot(svd,npc,type="barplot")
+pcrplot(na.omit(betas.clean), cov, npc=5)
+
+
+#'# Epigenetic Age
 #'Load package for Age-Prediction
 library(wateRmelon)
 DNAmAge<-as.vector(agep(beta))
