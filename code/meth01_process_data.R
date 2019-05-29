@@ -15,7 +15,8 @@ library(stringi)
 library(magrittr)
 library(data.table)
 library(svd)
-suppressMessages(library(EpiSmokEr))
+require(ewastools)
+suppressMessages(library(wateRmelon))
 options(warn=0)
 
 
