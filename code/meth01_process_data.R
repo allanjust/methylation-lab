@@ -209,7 +209,10 @@ pheno = cbind(pheno,LC)
 plot(pheno$GR,ylim=c(0,1))
 
 pheno[which.min(GR),.(gsm,exclude)]
+#' This is the lung tissue sample from before
+
 pheno[which.max(GR),.(gsm,exclude)]
+#' This is actually a sample of purified granulocytes
 
 pheno[gsm=="GSM1185585",exclude:=TRUE]
 
