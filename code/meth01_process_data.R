@@ -246,6 +246,8 @@ save(pheno,manifest,beta,file="data/processed.rda")
 #'Load package for Age-Prediction
 library(wateRmelon)
 DNAmAge<-as.vector(agep(beta))
+hist(DNAmAge)
+boxplot(DNAmAge);stripchart(DNAmAge, vertical = T,method = "jitter", add = T, pch = 20, col = 'red')
 
 #'Agreement between Horvath's Epigenetic age and Hannum's clock
 data(hannumCoef)
@@ -268,6 +270,8 @@ wilcox.test(AgeAccelerationResidual ~ pheno$smoker)
 
 #' Differences by Smoking status
 boxplot(DNAmAge ~pheno$smoker, col=c("blue","red"))
+wilcox.test(DNAmAge ~ pheno$smoker)
 boxplot(DNAmAge.Hannum ~pheno$smoker, col=c("blue","red"))
+wilcox.test(DNAmAge.Hannum ~ pheno$smoker)
 
 #' End of script 01
