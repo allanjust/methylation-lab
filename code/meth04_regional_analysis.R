@@ -11,22 +11,20 @@ knitr::opts_knit$set(root.dir = "../")
 
 # load the data
 load("data/processed.rda")
-betas.clean = beta[manifest[probe_type=="cg" & !chr %in% c("X","Y")]$index,]
+library(data.table)
+library(stringi)
+library(stringr)
+betas.clean = beta[manifest[manifest$probe_type=="cg" & !chr %in% c("X","Y")]$index,]
 
 
-#' Load package for regional analysis "DMRcate"
-#' see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
-#' Other popular options for conducting Regional DNA methylation analysis in R are Aclust and bumphunter 
-suppressMessages(library(DMRcate)) # Popular package for regional DNA methylation analysis
 
+
+#'# Introduction to limma 
+#' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
+suppressMessages(library(limma,minfi))
 
 #' First we need to define a model
 model = model.matrix( ~smoker+sex+CD4+CD8+NK+B+MO+GR,data=pheno)
-
-
-#' Introduction to limma 
-#' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
-suppressMessages(library(limma,minfi))
 EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
 Top<-topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
 Top
@@ -41,6 +39,12 @@ Top<-cbind(Top[,1:5], Annot.Tops)
 #' Order by chr and chromosomal position
 Top[order(Top$chr,Top$pos),c(1,6,7,8,9)]
 
+
+
+#' Load package for regional analysis "DMRcate"
+#' see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
+#' Other popular options for conducting Regional DNA methylation analysis in R are Aclust and bumphunter 
+suppressMessages(library(DMRcate)) # Popular package for regional DNA methylation analysis
 #'Regions are now agglomerated from groups of significant probes 
 #'Let's run the regional analysis using the Beta-values from our preprocessed data
 myannotation <- cpg.annotate("array", na.omit(betas.clean), analysis.type="differential",arraytype="450K",
@@ -99,7 +103,7 @@ cpgs = subset(dmrcoutput.smoking$input, CHR == chr & pos >= start & pos <= end)
 knitr::kable(cpgs)
 
 
-#' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
+#'# Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
 require(EpiSmokEr)
 # Make sure rows of pheno match betas column names
 rownames(pheno)<-pheno$gsm
