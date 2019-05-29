@@ -3,6 +3,8 @@
 #'  meth01_process_data.R & meth02_process_data.R 
 #+ setdir03, echo = F
 knitr::opts_knit$set(root.dir = "../")
+#' Local library
+.libPaths("C:/EBC4/Rpackages")
 
 #'  we have already set up our analysis
 #if(!exists("pheno")){
