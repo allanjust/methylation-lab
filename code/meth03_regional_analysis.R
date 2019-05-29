@@ -16,13 +16,8 @@ suppressMessages(library(DMRcate)) # Popular package for regional DNA methylatio
 
 
 #' First we need to define a model
-model = model.matrix( ~SMOKE_STATUS+SEX+AGE+CD8T+NK+Bcell+Mono+Gran,data=pheno)
+model = model.matrix( ~smoker+sex+CD4+CD8+NK+B+MO+GR,data=pheno)
 
-
-#'Regions are now agglomerated from groups of significant probes 
-#'Let's run the regional analysis using the Beta-values from our preprocessed data
-myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
-                             what="Beta",design=model, coef=2)
 
 #' Introduction to limma 
 #' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
@@ -30,12 +25,9 @@ suppressMessages(library(limma,minfi))
 EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
 topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
 
-#'We don't find any significant regions (FDR<0.05), So let's try a simpler model as an example
-model = model.matrix( ~SMOKE_STATUS+SEX+AGE,data=pheno )
 
-EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
-topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
-
+#'Regions are now agglomerated from groups of significant probes 
+#'Let's run the regional analysis using the Beta-values from our preprocessed data
 myannotation <- cpg.annotate("array", betas.clean, analysis.type="differential",arraytype="EPIC",
                              what="Beta",design=model, coef=2)
 
@@ -55,16 +47,22 @@ results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
 #' Plot the DMR using the Gviz
 
 #' if you are interested in plotting genomic data the Gviz is extremely useful
-#'Let's look at the first region
-results.ranges[1]
+#'Let's look at the second region
+results.ranges[2]
 
 # set up the grouping variables and colours
-cols = c("magenta","red")[pheno$SMOKE_STATUS]
-names(cols) = levels(pheno$SMOKE_STATUS)[pheno$SMOKE_STATUS]
+cols = c("magenta","red")[pheno$smoker]
+names(cols) = levels(pheno$smoker)[pheno$smoker]
 
-#'Draw the plot for the top DMR\
+#'Draw the plot for a  DMR in\
 #+ fig.width=8, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
+DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.clean, phen.col=cols, what = "Beta",
+         arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
+         genome="hg19", samps=1:nrow(pheno))
+
+#'Draw the plot for another DMR\
+#+ fig.width=8, fig.height=6, dpi=300
+DMR.plot(ranges=results.ranges, dmr=3, CpGs=betas.clean, phen.col=cols, what = "Beta",
          arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
 

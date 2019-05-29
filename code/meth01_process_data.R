@@ -6,7 +6,7 @@
 #' number_sections: true
 #' ---
 #' Local library
-.libPaths("C:/EBC3/Rpackages")
+.libPaths("C:/EBC4/Rpackages")
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
