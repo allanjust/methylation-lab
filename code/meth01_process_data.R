@@ -6,7 +6,7 @@
 #' number_sections: true
 #' ---
 #' Local library
-.libPaths("C:/EBC3/Rpackages")
+.libPaths("C:/EBC4/Rpackages")
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
@@ -14,9 +14,7 @@ library(stringi)
 library(magrittr)
 library(data.table)
 library(svd)
-devtools::install_github("hhhh5/ewastools@master") # not on CRAN
 library(ewastools)
-devtools::install_github("sailalithabollepalli/EpiSmokEr") # not on CRAN
 library(EpiSmokEr)
 
 #' ## Importing the data
