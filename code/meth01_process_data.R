@@ -15,7 +15,7 @@ library(magrittr)
 library(data.table)
 library(svd)
 library(ewastools)
-library(EpiSmokEr)
+suppressMessages(library(wateRmelon))
 
 #' ## Importing the data
 #' 1. Read in the file `data/pheno_clean.csv` using `fread` from the data.table package, save it as object named `pheno`.
@@ -103,7 +103,7 @@ pheno[sex!=predicted_sex,exclude:=TRUE] # flag sample
 #' ## Detection p-values
 #' 
 
-meth %<>% detectionP
+meth = ewastools::detectionP(meth)
 chrY = meth$manifest[chr=='Y',index]
 detP = meth$detP[chrY,]
 detP = colSums(detP<0.01,na.rm=TRUE)
@@ -140,7 +140,7 @@ snps = meth$manifest[probe_type=="rs" & channel=="Both"]$index
 plot (density(color_bias[snps,14],na.rm=TRUE,bw=0.1),col=1,main="Dye-bias correction")
 lines(density(beta      [snps,14],na.rm=TRUE,bw=0.1),col=2)
 abline(v=0.5,lty=3)
-legend("topleft",col=1:2,legend=c("raw","corrected"))
+legend("topleft",col=1:2,legend=c("raw","corrected"),lwd=1)
 
 #' 
 plot (density(beta[meth$manifest$channel=="Grn" ,1],na.rm=TRUE),col="green",main="Distribution of beta-values")
@@ -210,7 +210,10 @@ pheno = cbind(pheno,LC)
 plot(pheno$GR,ylim=c(0,1))
 
 pheno[which.min(GR),.(gsm,exclude)]
+#' This is the lung tissue sample from before
+
 pheno[which.max(GR),.(gsm,exclude)]
+#' This is actually a sample of purified granulocytes
 
 pheno[gsm=="GSM1185585",exclude:=TRUE]
 
@@ -224,15 +227,6 @@ boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by
 axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=unique(LC$cell_type))
 legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
 
-
-#' ## Principal Component Analysis (PCA)
-#' Calculate major sources of variability of DNA methylation using PCA
-PCobject = prcomp(t(na.omit(beta)),center=T,scale= T)
-
-#' Proportion of variance explained by each additional PC
-cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
-knitr::kable(t(as.matrix(cummvar)),digits = 2)
-
 # drop problematic samples
 keep = which(!pheno$exclude)
 
@@ -245,6 +239,39 @@ beta  = beta[,keep]
 manifest = copy(meth$manifest)
 
 save(pheno,manifest,beta,file="data/processed.rda")
+
+
+
+#'Load package for Age-Prediction
+library(wateRmelon)
+DNAmAge<-as.vector(agep(betas.clean))
+
+#'Agreement between chronological age and DNAm-Age
+
+#' Correlation
+cor.test(DNAmAge,pheno$AGE)
+plot(pheno$AGE,DNAmAge,pch=21,ylab="Age Predicted",
+     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
+legend("topleft",legend=paste0("r=",round(cor(DNAmAge,pheno$AGE),2)),bty="n")
+abline(lm(DNAmAge~pheno$AGE),col="red",lw=2)
+
+
+#' Age Acceleration Residuals
+AgeAccelerationResidual<-residuals(lm(DNAmAge~pheno$AGE))
+boxplot(AgeAccelerationResidual ~pheno$SMOKE_STATUS, col=c("red","blue"))
+wilcox.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
+t.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
+
+
+#' Online Calculator
+Horvath<-read.csv("C:/EBC3/Data/MethylationData.output.csv")
+cor.test(Horvath$DNAmAge,pheno$AGE)
+plot(pheno$AGE,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
+     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
+legend("topleft",legend=paste0("r=",round(cor(Horvath$DNAmAge,pheno$AGE),2)),bty="n")
+abline(lm(Horvath$DNAmAge~pheno$AGE),col="red",lw=2)
+
+
 
 
 #' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
