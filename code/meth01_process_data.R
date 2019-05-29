@@ -103,7 +103,7 @@ pheno[sex!=predicted_sex,exclude:=TRUE] # flag sample
 #' ## Detection p-values
 #' 
 
-meth %<>% detectionP
+meth = ewastools::detectionP(meth)
 chrY = meth$manifest[chr=='Y',index]
 detP = meth$detP[chrY,]
 detP = colSums(detP<0.01,na.rm=TRUE)
@@ -140,7 +140,7 @@ snps = meth$manifest[probe_type=="rs" & channel=="Both"]$index
 plot (density(color_bias[snps,14],na.rm=TRUE,bw=0.1),col=1,main="Dye-bias correction")
 lines(density(beta      [snps,14],na.rm=TRUE,bw=0.1),col=2)
 abline(v=0.5,lty=3)
-legend("topleft",col=1:2,legend=c("raw","corrected"))
+legend("topleft",col=1:2,legend=c("raw","corrected"),lwd=1)
 
 #' 
 plot (density(beta[meth$manifest$channel=="Grn" ,1],na.rm=TRUE),col="green",main="Distribution of beta-values")
@@ -210,7 +210,10 @@ pheno = cbind(pheno,LC)
 plot(pheno$GR,ylim=c(0,1))
 
 pheno[which.min(GR),.(gsm,exclude)]
+#' This is the lung tissue sample from before
+
 pheno[which.max(GR),.(gsm,exclude)]
+#' This is actually a sample of purified granulocytes
 
 pheno[gsm=="GSM1185585",exclude:=TRUE]
 
@@ -223,15 +226,6 @@ LC = melt(LC,value.name="proportion",variable.name="cell_type",id.vars="smoker")
 boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by smoking status",xaxt="n")
 axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=unique(LC$cell_type))
 legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
-
-
-#' ## Principal Component Analysis (PCA)
-#' Calculate major sources of variability of DNA methylation using PCA
-PCobject = prcomp(t(na.omit(beta)),center=T,scale= T)
-
-#' Proportion of variance explained by each additional PC
-cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
-knitr::kable(t(as.matrix(cummvar)),digits = 2)
 
 # drop problematic samples
 keep = which(!pheno$exclude)
