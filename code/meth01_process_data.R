@@ -14,7 +14,6 @@ library(stringi)
 library(magrittr)
 library(data.table)
 library(svd)
-devtools::install_github("hhhh5/ewastools@master") # not on CRAN
 library(ewastools)
 
 #' ## Importing the data
@@ -140,7 +139,7 @@ snps = meth$manifest[probe_type=="rs" & channel=="Both"]$index
 plot (density(color_bias[snps,14],na.rm=TRUE,bw=0.1),col=1,main="Dye-bias correction")
 lines(density(beta      [snps,14],na.rm=TRUE,bw=0.1),col=2)
 abline(v=0.5,lty=3)
-legend("topleft",col=1:2,legend=c("raw","corrected"))
+legend("topleft",col=1:2,legend=c("raw","corrected"),lwd=1)
 
 #' 
 plot (density(beta[meth$manifest$channel=="Grn" ,1],na.rm=TRUE),col="green",main="Distribution of beta-values")
