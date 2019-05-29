@@ -5,9 +5,14 @@
 knitr::opts_knit$set(root.dir = "../")
 
 #'  we have already set up our analysis
-if(!exists("pheno")){
-  source("code/meth02_analyze_data.R")
-}
+#if(!exists("pheno")){
+#  source("code/meth02_analyze_data.R")
+#}
+
+# load the data
+load("data/processed.rda")
+betas.clean = beta[manifest[probe_type=="cg" & !chr %in% c("X","Y")]$index,]
+
 
 #' Load package for regional analysis "DMRcate"
 #' see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
@@ -23,7 +28,15 @@ model = model.matrix( ~smoker+sex+CD4+CD8+NK+B+MO+GR,data=pheno)
 #' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
 suppressMessages(library(limma,minfi))
 EWAS.limma <- eBayes(lmFit(betas.clean, design=model))
-topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
+Top<-topTable(EWAS.limma, coef=2, number=Inf, sort.by="p")[1:10,]
+Top
+
+#' Bind results with annotation
+require(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+Annot<-as.data.frame(getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19))
+Annot.Tops<-Annot[rownames(Top) %in% Annot$Name,]
+cbind(Top,rownames(Top) %in% Annot$Name[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island")])
+Annot[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island")]
 
 
 #'Regions are now agglomerated from groups of significant probes 
