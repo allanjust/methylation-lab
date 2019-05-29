@@ -15,6 +15,7 @@ library(magrittr)
 library(data.table)
 library(svd)
 library(ewastools)
+library(minfi)
 suppressMessages(library(wateRmelon))
 
 #' ## Importing the data
@@ -240,49 +241,31 @@ manifest = copy(meth$manifest)
 
 save(pheno,manifest,beta,file="data/processed.rda")
 
-
-
 #'Load package for Age-Prediction
 library(wateRmelon)
-DNAmAge<-as.vector(agep(betas.clean))
+DNAmAge<-as.vector(agep(beta))
 
-#'Agreement between chronological age and DNAm-Age
+#'Agreement between Horvath's Epigenetic age and Hannum's clock
+data(hannumCoef)
+length(hannumCoef)
+DNAmAge.Hannum<-as.vector(agep(beta,coeff=hannumCoef,method = "hannum"))
 
-#' Correlation
-cor.test(DNAmAge,pheno$AGE)
-plot(pheno$AGE,DNAmAge,pch=21,ylab="Age Predicted",
-     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
-legend("topleft",legend=paste0("r=",round(cor(DNAmAge,pheno$AGE),2)),bty="n")
-abline(lm(DNAmAge~pheno$AGE),col="red",lw=2)
+
+#' Correlation; agreement
+cor.test(DNAmAge,DNAmAge.Hannum)
+plot(DNAmAge.Hannum,DNAmAge,pch=21,ylab="Hortvath's DNAm Age",
+     xlab="Hannum's DNAm Age",cex=1.2, bg=alpha("deepskyblue",0.45),main="Epigenetic Clocks")
+legend("topleft",legend=paste0("r=",round(cor(DNAmAge.Hannum,DNAmAge),2)),bty="n")
+abline(lm(DNAmAge~DNAmAge.Hannum),col="red",lw=2)
 
 
 #' Age Acceleration Residuals
-AgeAccelerationResidual<-residuals(lm(DNAmAge~pheno$AGE))
-boxplot(AgeAccelerationResidual ~pheno$SMOKE_STATUS, col=c("red","blue"))
-wilcox.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
-t.test(AgeAccelerationResidual ~ pheno$SMOKE_STATUS)
+AgeAccelerationResidual<-residuals(lm(DNAmAge.Hannum~DNAmAge))
+boxplot(AgeAccelerationResidual ~pheno$smoker, col=c("blue","red"))
+wilcox.test(AgeAccelerationResidual ~ pheno$smoker)
 
+#' Differences by Smoking status
+boxplot(DNAmAge ~pheno$smoker, col=c("blue","red"))
+boxplot(DNAmAge.Hannum ~pheno$smoker, col=c("blue","red"))
 
-#' Online Calculator
-Horvath<-read.csv("C:/EBC3/Data/MethylationData.output.csv")
-cor.test(Horvath$DNAmAge,pheno$AGE)
-plot(pheno$AGE,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
-     xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
-legend("topleft",legend=paste0("r=",round(cor(Horvath$DNAmAge,pheno$AGE),2)),bty="n")
-abline(lm(Horvath$DNAmAge~pheno$AGE),col="red",lw=2)
-
-
-
-
-#' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
-# Make sure rows of pheno match betas column names
-rownames(pheno)<-pheno$gsm
-identical(colnames(beta),rownames(pheno))
-
-# pheno needs a column for sex,in the format of 1 and 2 representing men and women respectively
-pheno$sex<-ifelse(pheno$sex=="m",1,2)
-# 121 CpGs are used selected by LASSO along with Sex to get 3 categories (current, former and never smokers)
-result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
-result[,]
-# Let's look how well the prediction performed
-table(pheno$smoker,result$PredictedSmokingStatus)
+#' End of script 01

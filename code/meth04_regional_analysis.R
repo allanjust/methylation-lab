@@ -84,4 +84,18 @@ cpgs = subset(dmrcoutput.smoking$input, CHR == chr & pos >= start & pos <= end)
 knitr::kable(cpgs)
 
 
+#' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
+# Make sure rows of pheno match betas column names
+rownames(pheno)<-pheno$gsm
+identical(colnames(beta),rownames(pheno))
+
+# pheno needs a column for sex,in the format of 1 and 2 representing men and women respectively
+pheno$sex<-ifelse(pheno$sex=="m",1,2)
+# 121 CpGs are used selected by LASSO along with Sex to get 3 categories (current, former and never smokers)
+result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
+result[,]
+# Let's look how well the prediction performed
+table(pheno$smoker,result$PredictedSmokingStatus)
+
+
 #' End of script 03
