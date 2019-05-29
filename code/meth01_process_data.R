@@ -16,6 +16,8 @@ library(data.table)
 library(svd)
 devtools::install_github("hhhh5/ewastools@master") # not on CRAN
 library(ewastools)
+devtools::install_github("sailalithabollepalli/EpiSmokEr") # not on CRAN
+library(EpiSmokEr)
 
 #' ## Importing the data
 #' 1. Read in the file `data/pheno_clean.csv` using `fread` from the data.table package, save it as object named `pheno`.
@@ -245,3 +247,17 @@ beta  = beta[,keep]
 manifest = copy(meth$manifest)
 
 save(pheno,manifest,beta,file="data/processed.rda")
+
+
+#' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
+# Make sure rows of pheno match betas column names
+rownames(pheno)<-pheno$gsm
+identical(colnames(beta),rownames(pheno))
+
+# pheno needs a column for sex,in the format of 1 and 2 representing men and women respectively
+pheno$sex<-ifelse(pheno$sex=="m",1,2)
+# 121 CpGs are used selected by LASSO along with Sex to get 3 categories (current, former and never smokers)
+result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
+result[,]
+# Let's look how well the prediction performed
+table(pheno$smoker,result$PredictedSmokingStatus)
