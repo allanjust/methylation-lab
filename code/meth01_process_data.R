@@ -14,9 +14,8 @@ library(stringi)
 library(magrittr)
 library(data.table)
 library(svd)
-library(ewastools)
-library(minfi)
-suppressMessages(library(wateRmelon))
+suppressMessages(library(EpiSmokEr))
+
 
 #' ## Importing the data
 #' 1. Read in the file `data/pheno_clean.csv` using `fread` from the data.table package, save it as object named `pheno`.
@@ -121,7 +120,7 @@ meth$detP[-chrY,] %>% is_weakly_greater_than(0.01) %>% table(useNA="ifany")
 round((33749/(33749+16939303))*100,3)
 
 #' We should mask these undetected probes.
-meth %<>% mask(0.01)
+meth = ewastools::mask(meth,0.01)
 
 #' Dye-bias correction
 #' Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
