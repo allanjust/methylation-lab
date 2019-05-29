@@ -102,7 +102,7 @@ pheno[sex!=predicted_sex,exclude:=TRUE] # flag sample
 #' ## Detection p-values
 #' 
 
-meth %<>% detectionP
+meth = ewastools::detectionP(meth)
 chrY = meth$manifest[chr=='Y',index]
 detP = meth$detP[chrY,]
 detP = colSums(detP<0.01,na.rm=TRUE)
