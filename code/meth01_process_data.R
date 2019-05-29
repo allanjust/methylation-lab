@@ -223,15 +223,6 @@ boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by
 axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=unique(LC$cell_type))
 legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
 
-
-#' ## Principal Component Analysis (PCA)
-#' Calculate major sources of variability of DNA methylation using PCA
-PCobject = prcomp(t(na.omit(beta)),center=T,scale= T)
-
-#' Proportion of variance explained by each additional PC
-cummvar <- summary(PCobject)$importance["Cumulative Proportion", 1:10]
-knitr::kable(t(as.matrix(cummvar)),digits = 2)
-
 # drop problematic samples
 keep = which(!pheno$exclude)
 
