@@ -10,11 +10,13 @@
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
+options(warn=-1)
 library(stringi)
 library(magrittr)
 library(data.table)
 library(svd)
 suppressMessages(library(EpiSmokEr))
+options(warn=0)
 
 
 #' ## Importing the data
