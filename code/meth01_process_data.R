@@ -10,6 +10,7 @@
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
 
+
 options(warn=-1)
 library(stringi)
 library(magrittr)
@@ -17,6 +18,7 @@ library(data.table)
 library(svd)
 require(ewastools)
 suppressMessages(library(wateRmelon))
+suppressMessages(library(ENmix))
 options(warn=0)
 
 
