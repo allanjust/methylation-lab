@@ -1,5 +1,13 @@
+.libPaths("C:/EBC4/Rpackages")
+
+#+ setdir01, echo = F
+knitr::opts_knit$set(root.dir = "../")
+
+options(warn=-1)
 library(data.table)
+suppressMessages(library(limma))
 suppressMessages(library(ENmix))
+options(warn=0)
 
 #' Load the data
 load("data/processed.rda")
