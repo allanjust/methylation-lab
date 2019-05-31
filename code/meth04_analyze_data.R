@@ -15,6 +15,7 @@ knitr::opts_knit$set(root.dir = "../")
 load("data/processed.rda")
 
 #' load packages
+options(warn=-1)
 suppressPackageStartupMessages({
   library(DMRcate) # for regional analysis
   library(magrittr)
@@ -23,6 +24,7 @@ suppressPackageStartupMessages({
   library(qqman) # for visualization of data
   library(stringi) # string manipulation
 })
+options(warn=0)
 
 #' Code categorical variable as factors
 pheno$smoker %<>% factor
@@ -181,4 +183,4 @@ qqman::manhattan(datamanhat,chr="chr",bp="mapinfo",p="P.value",snp="probe_id"
 #' cleanup
 rm(nCpG,CpG.name,datamanhat,lambda,results1,results2,results3)
 gc()
-#' End of script 02
+#' End of script 04
