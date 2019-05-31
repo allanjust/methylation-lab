@@ -3,7 +3,7 @@
 #'  meth01_process_data.R  
 #+ setdir02, echo = F
 #' Local library
-.libPaths("C:/EBC3/Rpackages")
+.libPaths("C:/EBC4/Rpackages")
 knitr::opts_knit$set(root.dir = "../")
 
 #' we have a processed dataset with 30 samples (otherwise we run script 01)
