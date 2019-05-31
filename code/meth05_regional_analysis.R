@@ -1,25 +1,21 @@
 #'# Regional DNA methylation analysis using DMRcate and bumphunter  
 #' Using data preprocessed in our script:  
-#'  meth01_process_data.R & meth02_process_data.R 
+#'  meth01_process_data.R
 #+ setdir03, echo = F
 knitr::opts_knit$set(root.dir = "../")
 #' Local library
 .libPaths("C:/EBC4/Rpackages")
 
-#'  we have already set up our analysis
-#if(!exists("pheno")){
-#  source("code/meth02_analyze_data.R")
-#}
-
-# load the data
-load("data/processed.rda")
-library(data.table)
+options(warn=-1)
+suppressMessages(library(data.table))
 library(stringi)
-library(stringr)
+suppressMessages(library(minfi))
+options(warn=0)
+
+#' load the data
+load("data/processed.rda")
+
 betas.clean = beta[manifest[manifest$probe_type=="cg" & !chr %in% c("X","Y")]$index,]
-
-
-
 
 #'# Introduction to limma 
 #' see [Smyth GK. Stat Appl Genet Mol Biol 2004](https://www.ncbi.nlm.nih.gov/pubmed/16646809).  
@@ -119,4 +115,4 @@ result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
 table(pheno$smoker,result$PredictedSmokingStatus)
 
 
-#' End of script 03
+#' End of script 05
