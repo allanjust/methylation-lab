@@ -16,7 +16,6 @@ library(magrittr)
 library(data.table)
 library(svd)
 library(ewastools)
-suppressMessages(library(EpiSmokEr))
 options(warn=0)
 
 #' ## Importing the data
@@ -272,19 +271,3 @@ plot(pheno$AGE,Horvath$DNAmAge,pch=21,ylab="Age Predicted",
      xlab="Age Reported",cex=1.2, bg=alpha("deepskyblue",0.45),main="Prediction of Age")
 legend("topleft",legend=paste0("r=",round(cor(Horvath$DNAmAge,pheno$AGE),2)),bty="n")
 abline(lm(Horvath$DNAmAge~pheno$AGE),col="red",lw=2)
-
-
-
-
-#' ## Predicting smoking with EpiSmokEr: https://www.biorxiv.org/content/10.1101/487975v1.article-info
-# Make sure rows of pheno match betas column names
-rownames(pheno)<-pheno$gsm
-identical(colnames(beta),rownames(pheno))
-
-# pheno needs a column for sex,in the format of 1 and 2 representing men and women respectively
-pheno$sex<-ifelse(pheno$sex=="m",1,2)
-# 121 CpGs are used selected by LASSO along with Sex to get 3 categories (current, former and never smokers)
-result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
-result[,]
-# Let's look how well the prediction performed
-table(pheno$smoker,result$PredictedSmokingStatus)
