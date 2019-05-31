@@ -42,3 +42,5 @@ vignettes/*.pdf
 # GEO downloads
 data/GSM*
 
+
+data/processed\.rda
