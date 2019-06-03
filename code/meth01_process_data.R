@@ -21,7 +21,7 @@ options(warn=0)
 
 
 #' ## Importing the data
-#' 1. Read in the file `data/pheno_clean.csv` using `fread` from the data.table package, save it as object named `pheno`.
+#' 1. Read in the file `data/pheno.csv` using `fread` from the data.table package, save it as object named `pheno`.
 #' 2. Import the methylation data using the function `read_idats`.
 #'    You only have to provide the first part of the file name without the `_Red.idat.gz` or `_Grn.idat.gz` suffixes.
 #' 3.  Save as object named `meth`
