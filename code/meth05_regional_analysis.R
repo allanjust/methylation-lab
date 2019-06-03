@@ -68,13 +68,14 @@ results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
 results.ranges[2]
 
 # set up the grouping variables and colours
+pheno$smoker<-as.factor(pheno$smoker)
 cols = c("magenta","red")[pheno$smoker]
 names(cols) = levels(pheno$smoker)[pheno$smoker]
 
 #'Draw the plot for a  DMR in\
 #+ fig.width=8, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.clean, phen.col=cols, what = "Beta",
-         arraytype = "450", pch=16, toscale=TRUE, plotmedians=TRUE, 
+         arraytype = "450K", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
 
 #'Draw the plot for another DMR\
