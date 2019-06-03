@@ -10,7 +10,7 @@ suppressMessages(library(ENmix))
 options(warn=0)
 
 #' Load the data
-load("data/processed.rda")
+load("C:/EBC4/methylation-lab/data/processed.rda")
 
 #'# Exploring global DNA Methylation variability via PCs
 # Let's look at the effect of sex

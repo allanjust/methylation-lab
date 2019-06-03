@@ -9,7 +9,7 @@ library(magrittr)
 options(warn=0)
 
 #' List of idat files
-pheno = fread("data/pheno_clean.csv")
+pheno = fread("C:/EBC4/methylation-lab/data/pheno_clean.csv")
 
 #' ## Pre-processing with `ewastools`
 

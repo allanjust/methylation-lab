@@ -241,4 +241,4 @@ pheno = pheno[keep]
 beta  = beta[,keep]
 manifest = copy(meth$manifest)
 
-save(pheno,manifest,beta,file="data/processed.rda")
+#save(pheno,manifest,beta,file="data/processed.rda")
