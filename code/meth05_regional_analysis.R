@@ -74,13 +74,13 @@ names(cols) = levels(pheno$smoker)[pheno$smoker]
 #'Draw the plot for a  DMR in\
 #+ fig.width=8, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.clean, phen.col=cols, what = "Beta",
-         arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
+         arraytype = "450", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
 
 #'Draw the plot for another DMR\
 #+ fig.width=8, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
-         arraytype = "EPIC", pch=16, toscale=TRUE, plotmedians=TRUE, 
+         arraytype = "450K", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
 
 #' cleanup
