@@ -39,7 +39,7 @@ prop <- (sum(eigenvalue[1:npc])/sum(eigenvalue)) * 100
 cat("Top ", npc, " principal components can explain ", 
     prop, "% of data \n    variation", "\n")
 screeplot(svd,npc,type="barplot")
-pcrplot(na.omit(betas.clean), cov, npc=10)
+#pcrplot(na.omit(betas.clean), cov, npc=10) # Already saved in C:\EBC4\methylation-lab
 
 
 #'# Epigenetic Age
