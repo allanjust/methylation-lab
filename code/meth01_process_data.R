@@ -82,8 +82,10 @@ meth %>% control_metrics %>% sample_failure -> pheno$failed
 
 table(pheno$failed,useNA='ifany')
 #' There are no failed samples.
+#'
 
 #' ## Sex check
+#'
 #' 1. Apply the function `check_sex` on the `meth` object to compute the normalized average total fluorescence intensity of probes targeting the X and Y chromosomes.
 #' 2. Use the function `predict_sex` to infer the sex of the sample donors from the methylation data.
 #' 3. Add column `predicted_sex` to `pheno`
@@ -125,7 +127,8 @@ round((33749/(33749+16939303))*100,3)
 #' We should mask these undetected probes.
 meth = ewastools::mask(meth,0.01)
 
-#' Dye-bias correction
+#' ## Dye-bias correction
+#' 
 #' Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
 
 
@@ -228,7 +231,7 @@ LC = melt(LC,value.name="proportion",variable.name="cell_type",id.vars="smoker")
 
 boxplot(proportion ~ smoker+cell_type,LC,col=1:2,main="Cell type distribution by smoking status",xaxt="n")
 axis(1,at=seq(from=1.5, to=11.5,by=2),adj=1,labels=unique(LC$cell_type))
-legend("topleft",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
+legend("topright",c("Non-smoker","Smoker"),pch=15,bty='n',col=1:2)
 
 # drop problematic samples
 keep = which(!pheno$exclude)
